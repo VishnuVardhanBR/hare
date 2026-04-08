@@ -60,6 +60,22 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 - Leaderboards, notifications, company pages with stats
 - Mobile app
 
-## Style
+## Style & Frontend
 
 The user emphasized "VERY SIMPLE AND TO THE POINT PLATFORM" multiple times. Keep the UI minimal. Don't over-design. The core loop is: search -> unlock -> submit -> repeat.
+
+**Frontend redesign in progress.** Read `DESIGN.md` for the complete design system specification including:
+- Color palette (blue primary, slate neutrals, amber credits)
+- Typography (Inter font)
+- Component library (Tailwind CSS v4 + shadcn/ui New York variant)
+- Page-by-page layout specs
+- Responsive breakpoints and navigation patterns
+- Interaction patterns (buttons, forms, search, unlock flow)
+
+**Critical implementation notes:**
+- Do NOT modify `src/app/api/`, `src/lib/`, or `prisma/`. Only UI files change.
+- Existing prop contracts between server and client components must be preserved.
+- Auth pattern: `getServerSession(authOptions)` in server components, `signIn`/`signOut` from `next-auth/react` in client components. No `SessionProvider` wrapper.
+- Nav needs `creditBalance` and `isAdmin` — fetch in `layout.tsx`, pass as props.
+- Tailwind v4 uses CSS-based config (not `tailwind.config.js`). shadcn init handles this.
+- Run `npm run deploy:build` to verify Cloudflare Workers compatibility after changes.
