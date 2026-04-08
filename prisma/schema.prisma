@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  ACTIVE
+  RESTRICTED
+  BANNED
+}
+
+enum RecruiterVerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
+
+enum CreditTransactionType {
+  SIGNUP_BONUS
+  SUBMISSION
+  UNLOCK
+  PURCHASE
+  REFUND
+}
+
+enum ReportReason {
+  BOUNCED
+  WRONG_PERSON
+  NOT_RECRUITER
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+
+  university    String?
+  displayName   String   @default("student")
+  creditBalance Int      @default(0)
+  status        UserStatus @default(ACTIVE)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  recruiterEmails RecruiterEmail[] @relation("SubmittedRecruiterEmails")
+  unlocks        Unlock[]
+  transactions   CreditTransaction[]
+  reports        Report[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Company {
+  id             String   @id @default(uuid())
+  name           String
+  normalizedName String   @unique
+  domain         String
+  logoUrl        String?
+  aliases        Json     @default("[]")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  recruiterEmails RecruiterEmail[]
+
+  @@index([name])
+}
+
+model RecruiterEmail {
+  id                 String                      @id @default(uuid())
+  companyId          String
+  email              String                      @unique
+  recruiterName      String
+  title              String?
+  department         String?
+  submittedById      String
+  verificationStatus RecruiterVerificationStatus @default(PENDING)
+  verificationNote   String?
+  lastVerifiedAt     DateTime?
+  submittedAt        DateTime                    @default(now())
+
+  company       Company @relation(fields: [companyId], references: [id])
+  submittedBy   User    @relation("SubmittedRecruiterEmails", fields: [submittedById], references: [id])
+  unlocks       Unlock[]
+  reports       Report[]
+
+  @@index([companyId])
+}
+
+model Unlock {
+  id         String   @id @default(uuid())
+  userId     String
+  emailId    String
+  unlockedAt DateTime @default(now())
+
+  user          User          @relation(fields: [userId], references: [id])
+  recruiterEmail RecruiterEmail @relation(fields: [emailId], references: [id])
+
+  @@unique([userId, emailId])
+  @@index([emailId])
+}
+
+model CreditTransaction {
+  id          String                @id @default(uuid())
+  userId      String
+  amount      Int
+  type        CreditTransactionType
+  referenceId String?
+  createdAt   DateTime              @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+}
+
+model Report {
+  id         String       @id @default(uuid())
+  reporterId String
+  emailId    String
+  reason     ReportReason
+  notes      String?
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+
+  reporter      User          @relation(fields: [reporterId], references: [id])
+  recruiterEmail RecruiterEmail @relation(fields: [emailId], references: [id])
+
+  @@unique([reporterId, emailId])
+  @@index([emailId, status])
+}
