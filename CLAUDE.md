@@ -1,0 +1,65 @@
+# Hare - Implementation Context
+
+Read `SPEC.md` for the full platform design. This file covers decisions, constraints, and gotchas that came up during design but aren't in the spec.
+
+## What This Is
+
+A credit-based recruiter email sharing platform for CS/tech students. Students share verified recruiter work emails to earn credits, spend credits to unlock emails others shared. Glassdoor's "give to get" model applied to recruiter contacts.
+
+## Key Design Decisions (and why)
+
+**Per-email unlock, not per-company.** The user explicitly chose this for monetization. 1 credit = 1 recruiter email revealed. Don't change this to per-company.
+
+**MVP quality controls are intentionally minimal.** Automated verification on submit (format + domain + SMTP) plus a manual "Report" button that goes to an admin panel. No automated flag thresholds, no reputation scores, no credit penalties. The user said the full flagging system was "too complex for MVP." These are listed as post-MVP in the spec.
+
+**No passwords.** Google OAuth only, restricted to .edu email domains. First login auto-creates the account with 1 free credit. Don't add a password-based auth flow.
+
+**Blurred display strategy.** On company pages, show title and department in clear text but blur/mask the recruiter name and email. This lets students decide WHICH contact to unlock based on role relevance. e.g., "S***** Tech Recruiter | New Grad Team" is enough to decide.
+
+**Credit economics are final.** +1 on signup, +5 per verified submission, -1 per unlock. Don't adjust these without asking.
+
+## Things NOT in the Spec That Matter
+
+**Cold start:** The maintainers will manually seed 50-100 recruiter emails before launch. Consider building an admin bulk-import tool or seed script for this.
+
+**Legal stance:** The user accepts the legal risk of sharing personal recruiter work emails. Still recommended to build a simple recruiter opt-out page (a basic form where a recruiter can request their email be removed). Low effort, good protection.
+
+**Target audience:** CS/tech students at one university initially. The .edu restriction handles this, but the UI/copy should speak to tech recruiting specifically (not generic career advice).
+
+**Monetization:** Stripe for credit purchases. The user wants this in the MVP. Example pricing: 10 credits/$3, 25/$5, 50/$8. These are starting points, not final.
+
+## Technical Gotchas
+
+**SMTP verification has limits.** Google Workspace and other catch-all mail servers accept all addresses - you can't confirm the specific mailbox exists. For these, mark as "domain verified, mailbox unconfirmed" and move on. Don't block the submission.
+
+**Rate-limit SMTP checks.** If you hammer corporate mail servers with verification requests, the app's IP gets blacklisted. Implement rate limiting per domain.
+
+**Company name normalization matters.** "Apple", "Apple Inc", "Apple Inc." should all resolve to the same company. Build this into the company creation/search flow from the start.
+
+**Duplicate detection is by exact email match only.** Don't try fuzzy matching on recruiter names or similar emails. Exact email string match = duplicate.
+
+## Scope Boundaries
+
+**Build these (MVP):**
+- 5 pages: Landing, Dashboard, Company Page, Submit Form, Admin Panel
+- Google OAuth with .edu restriction
+- Credit system (earn, spend, purchase)
+- Email verification pipeline (format + domain + SMTP)
+- Company search with autocomplete
+- Per-email unlock with blur/reveal
+- Report button (sends to admin panel)
+- Stripe integration for buying credits
+- Admin panel for reviewing reports and managing emails
+
+**Don't build these (post-MVP):**
+- Automated flag thresholds
+- Submitter reputation scores
+- Credit penalties for bad submissions
+- Periodic re-verification (monthly SMTP re-check)
+- Automated credit refunds
+- Leaderboards, notifications, company pages with stats
+- Mobile app
+
+## Style
+
+The user emphasized "VERY SIMPLE AND TO THE POINT PLATFORM" multiple times. Keep the UI minimal. Don't over-design. The core loop is: search -> unlock -> submit -> repeat.
