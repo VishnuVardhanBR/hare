@@ -25,9 +25,15 @@ export function CompanySearch({ defaultQuery = "" }: CompanySearchProps) {
       <CompanySearchCombobox
         allowCustomValue={false}
         emptyMessage="No companies found."
+        inputVariant="vanish"
         onSelect={handleSelect}
         onValueChange={setQuery}
-        placeholder="Type Apple, Meta, Stripe..."
+        placeholder="Search recruiter contacts..."
+        placeholders={[
+          "Search Apple, Meta, Stripe...",
+          "Try Amazon or Google...",
+          "Find new grad recruiting contacts..."
+        ]}
         showContactCount
         value={query}
       />

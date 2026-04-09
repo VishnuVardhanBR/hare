@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { Tabs } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 type RecruiterEntry = {
@@ -54,6 +55,7 @@ const REPORT_REASON_LABELS: Record<ReportReason, string> = {
 };
 
 export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntriesProps) {
+  const [activeTab, setActiveTab] = useState<"all" | "locked" | "unlocked">("all");
   const [credits, setCredits] = useState(initialCredits);
   const [rowState, setRowState] = useState(entries);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -67,6 +69,15 @@ export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntr
     () => rowState.filter((entry) => entry.unlocked).length,
     [rowState]
   );
+  const filteredEntries = useMemo(() => {
+    if (activeTab === "locked") {
+      return rowState.filter((entry) => !entry.unlocked);
+    }
+    if (activeTab === "unlocked") {
+      return rowState.filter((entry) => entry.unlocked);
+    }
+    return rowState;
+  }, [activeTab, rowState]);
 
   async function unlockEntry(emailId: string) {
     setActiveUnlockId(emailId);
@@ -187,7 +198,25 @@ export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntr
       ) : null}
 
       <div className="space-y-4">
-        {rowState.map((entry) => {
+        <Tabs
+          tabs={[
+            { title: `All (${rowState.length})`, value: "all" },
+            { title: `Locked (${rowState.length - visibleCount})`, value: "locked" },
+            { title: `Unlocked (${visibleCount})`, value: "unlocked" }
+          ]}
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as "all" | "locked" | "unlocked")}
+        />
+
+        {filteredEntries.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground">
+              No contacts in this view.
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {filteredEntries.map((entry) => {
           const title = entry.title || "Recruiter";
           const department = entry.department || "Unknown team";
 

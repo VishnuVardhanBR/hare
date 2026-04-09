@@ -1,16 +1,16 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { CheckCircle2Icon, Loader2Icon, TriangleAlertIcon } from "lucide-react";
+import { CheckCircle2Icon, TriangleAlertIcon } from "lucide-react";
 
 import {
   CompanySearchCombobox,
   type CompanySearchResult
 } from "@/components/CompanySearchCombobox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StatefulButton } from "@/components/ui/stateful-button";
 import { getDomainFromEmail, sanitizeDomain } from "@/lib/company";
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
@@ -140,11 +140,9 @@ export function SubmitRecruiterForm() {
               setFormData((current) => ({ ...current, companyDomain: event.target.value }))
             }
           />
-          <p className="text-xs text-muted-foreground">
-            {selectedCompany
-              ? "Using domain from selected company."
-              : "Optional for new companies. If blank, we'll use the email domain."}
-          </p>
+          {selectedCompany ? (
+            <p className="text-xs text-muted-foreground">Using domain from selected company.</p>
+          ) : null}
         </div>
 
         <div className="space-y-2">
@@ -209,16 +207,12 @@ export function SubmitRecruiterForm() {
         </div>
       </div>
 
-      <Button disabled={state === "submitting"} type="submit">
-        {state === "submitting" ? (
-          <>
-            <Loader2Icon className="size-4 animate-spin" />
-            Submitting...
-          </>
-        ) : (
-          "Submit and earn 5 credits"
-        )}
-      </Button>
+      <StatefulButton
+        state={state === "submitting" ? "loading" : state === "success" ? "success" : "idle"}
+        type="submit"
+      >
+        {state === "submitting" ? "Submitting..." : "Submit and earn 5 credits"}
+      </StatefulButton>
 
       {message ? (
         <Alert variant={state === "error" ? "destructive" : "default"}>
