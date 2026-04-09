@@ -8,8 +8,7 @@ import { ChevronDownIcon, RabbitIcon, SearchIcon } from "lucide-react";
 import {
   NavCreditPill,
   NavGhostButton,
-  NavPrimaryPill,
-  NavTextLink
+  NavPrimaryPill
 } from "@/components/nav/NavPrimitives";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -69,9 +68,9 @@ export function Navbar({ user, creditBalance, isAdmin }: NavbarProps) {
                 </Link>
               </NavPrimaryPill>
 
-              <NavTextLink asChild active={submitActive}>
+              <NavPrimaryPill asChild active={submitActive}>
                 <Link href="/submit">Submit</Link>
-              </NavTextLink>
+              </NavPrimaryPill>
             </nav>
 
             <NavCreditPill credits={creditBalance} unlimited={isAdmin} />
@@ -93,17 +92,13 @@ export function Navbar({ user, creditBalance, isAdmin }: NavbarProps) {
                     <p className="truncate text-xs font-normal text-muted-foreground">{user.email}</p>
                   ) : null}
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard">Search</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/submit">Submit</Link>
-                </DropdownMenuItem>
                 {isAdmin ? (
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin">Admin</Link>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin">Admin</Link>
+                    </DropdownMenuItem>
+                  </>
                 ) : null}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

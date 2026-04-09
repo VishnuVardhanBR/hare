@@ -67,13 +67,13 @@ export function MobileNav({ user, creditBalance, isAdmin }: MobileNavProps) {
                 </SheetClose>
 
                 <SheetClose asChild>
-                  <NavTextLink
+                  <NavPrimaryPill
                     asChild
                     active={submitActive}
-                    className="h-10 w-full justify-start rounded-xl border border-transparent px-3 hover:bg-white/70"
+                    className="h-10 w-full justify-start px-3"
                   >
                     <Link href="/submit">Submit</Link>
-                  </NavTextLink>
+                  </NavPrimaryPill>
                 </SheetClose>
 
                 {isAdmin ? (

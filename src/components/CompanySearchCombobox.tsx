@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -29,8 +28,6 @@ type CompanySearchComboboxProps = {
   showContactCount?: boolean;
   required?: boolean;
   allowCustomValue?: boolean;
-  inputVariant?: "default" | "vanish";
-  placeholders?: string[];
 };
 
 export function CompanySearchCombobox({
@@ -45,9 +42,7 @@ export function CompanySearchCombobox({
   disabled = false,
   showContactCount = false,
   required = false,
-  allowCustomValue = true,
-  inputVariant = "default",
-  placeholders = []
+  allowCustomValue = true
 }: CompanySearchComboboxProps) {
   const [query, setQuery] = useState(value);
   const [results, setResults] = useState<CompanySearchResult[]>([]);
@@ -113,44 +108,16 @@ export function CompanySearchCombobox({
     return true;
   }, [allowCustomValue, minQueryLength, results.length, trimmedQuery.length]);
 
-  function handleSubmitFromInput(): boolean {
-    if (results.length > 0) {
-      selectCompany(results[0]);
-      return true;
-    }
-
-    if (showCreateOption) {
-      onValueChange(trimmedQuery);
-      setQuery(trimmedQuery);
-      setResults([]);
-      return true;
-    }
-
-    return false;
-  }
-
   return (
     <div className={cn("space-y-2", className)}>
-      {inputVariant === "vanish" ? (
-        <PlaceholdersAndVanishInput
-          className="h-10"
-          disabled={disabled}
-          enableVanishOnSubmit
-          onSubmit={handleSubmitFromInput}
-          onValueChange={handleInputChange}
-          placeholders={placeholders.length > 0 ? placeholders : [placeholder]}
-          value={query}
-        />
-      ) : (
-        <Input
-          disabled={disabled}
-          id={id}
-          placeholder={placeholder}
-          required={required}
-          value={query}
-          onChange={(event) => handleInputChange(event.target.value)}
-        />
-      )}
+      <Input
+        disabled={disabled}
+        id={id}
+        placeholder={placeholder}
+        required={required}
+        value={query}
+        onChange={(event) => handleInputChange(event.target.value)}
+      />
 
       {showSuggestions ? (
         <div className="overflow-hidden rounded-md border bg-background">

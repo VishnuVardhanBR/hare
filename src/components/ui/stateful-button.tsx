@@ -1,7 +1,6 @@
 "use client";
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { motion } from "motion/react";
 import { CheckIcon, Loader2Icon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -26,24 +25,15 @@ export function StatefulButton({
     <button
       aria-busy={state === "loading"}
       className={cn(
-        "inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-white/70 bg-white/80 px-4 py-2 text-sm font-medium text-slate-800 shadow-sm backdrop-blur transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-50",
         className
       )}
       disabled={isDisabled}
       type="button"
       {...props}
     >
-      <motion.span
-        animate={{ width: state === "idle" ? 0 : 16, opacity: state === "idle" ? 0 : 1 }}
-        className="inline-flex overflow-hidden"
-        transition={{ duration: 0.2 }}
-      >
-        {state === "loading" ? (
-          <Loader2Icon className="size-4 animate-spin" />
-        ) : (
-          <CheckIcon className="size-4" />
-        )}
-      </motion.span>
+      {state === "loading" ? <Loader2Icon className="size-4 animate-spin" /> : null}
+      {state === "success" ? <CheckIcon className="size-4" /> : null}
       <span>{children}</span>
     </button>
   );

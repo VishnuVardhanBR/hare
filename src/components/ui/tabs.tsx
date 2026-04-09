@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
-
 import { cn } from "@/lib/utils";
 
 export type TabItem = {
@@ -20,7 +18,7 @@ export function Tabs({ tabs, value, onValueChange, className }: TabsProps) {
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1 rounded-lg border bg-muted/30 p-1",
+        "inline-flex items-center gap-1 rounded-full border border-white/60 bg-white/60 p-1 shadow-sm backdrop-blur",
         className
       )}
     >
@@ -30,20 +28,13 @@ export function Tabs({ tabs, value, onValueChange, className }: TabsProps) {
         return (
           <button
             className={cn(
-              "relative rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-              isActive && "text-foreground"
+              "rounded-full px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:text-slate-900",
+              isActive && "border border-white/70 bg-white/85 text-slate-900 shadow-sm"
             )}
             key={tab.value}
             onClick={() => onValueChange(tab.value)}
             type="button"
           >
-            {isActive ? (
-              <motion.span
-                className="absolute inset-0 -z-10 rounded-md bg-background shadow-sm"
-                layoutId="active-tab-pill"
-                transition={{ type: "spring", stiffness: 300, damping: 28 }}
-              />
-            ) : null}
             {tab.title}
           </button>
         );
