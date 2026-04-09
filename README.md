@@ -50,6 +50,9 @@ Stripe (required only when purchases are enabled):
 - `STRIPE_PRICE_25`
 - `STRIPE_PRICE_50`
 
+Logo rendering (optional):
+- `NEXT_PUBLIC_LOGO_DEV_TOKEN` (publishable token for landing-page company logos)
+
 Email verification tuning (optional):
 - `SMTP_MIN_INTERVAL_MS` (default `5000`)
 - `SMTP_CONNECT_TIMEOUT_MS` (default `4500`)

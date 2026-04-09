@@ -16,16 +16,18 @@ export default async function LandingPage() {
   }
 
   const companies = await prisma.company.findMany({
-    select: { id: true, name: true, logoUrl: true },
+    select: { id: true, name: true, domain: true },
     where: {
-      recruiterEmails: { some: {} },
-      logoUrl: { not: null }
+      recruiterEmails: { some: {} }
     },
     orderBy: { recruiterEmails: { _count: "desc" } },
     take: 12
   });
 
-  const companiesWithLogo = getRenderableLogoCompanies(companies);
+  const companiesWithLogo = getRenderableLogoCompanies(
+    companies,
+    process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN
+  );
 
   return (
     <section className="space-y-12 py-4 text-center">
