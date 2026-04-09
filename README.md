@@ -50,6 +50,13 @@ Stripe (required only when purchases are enabled):
 - `STRIPE_PRICE_25`
 - `STRIPE_PRICE_50`
 
+Email verification tuning (optional):
+- `SMTP_MIN_INTERVAL_MS` (default `5000`)
+- `SMTP_CONNECT_TIMEOUT_MS` (default `4500`)
+- `SMTP_MAX_MX_HOSTS` (default `3`)
+- `EMAIL_DNS_CACHE_TTL_MS` (default `600000`)
+- `EMAIL_DNS_NEGATIVE_CACHE_TTL_MS` (default `120000`)
+
 ## Deploy: Vercel + Supabase
 1. Link Vercel project and add env vars:
    - `npx vercel link`

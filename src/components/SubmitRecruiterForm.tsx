@@ -11,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getDomainFromEmail, sanitizeDomain } from "@/lib/company";
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
 
@@ -25,10 +26,12 @@ const INITIAL_FORM = {
 
 export function SubmitRecruiterForm() {
   const [formData, setFormData] = useState(INITIAL_FORM);
+  const [selectedCompany, setSelectedCompany] = useState<CompanySearchResult | null>(null);
   const [state, setState] = useState<SubmitState>("idle");
   const [message, setMessage] = useState<string | null>(null);
 
   function handleCompanySelect(company: CompanySearchResult) {
+    setSelectedCompany(company);
     setFormData((current) => ({
       ...current,
       companyName: company.name,
@@ -36,12 +39,36 @@ export function SubmitRecruiterForm() {
     }));
   }
 
+  function handleCompanyValueChange(value: string) {
+    const matchesSelectedCompany =
+      !!selectedCompany &&
+      value.trim().toLowerCase() === selectedCompany.name.trim().toLowerCase();
+
+    setFormData((current) => {
+      const selectedDomain = selectedCompany?.domain ?? "";
+      const shouldClearLockedDomain =
+        !!selectedCompany &&
+        !matchesSelectedCompany &&
+        !!selectedDomain &&
+        current.companyDomain === selectedDomain;
+
+      return {
+        ...current,
+        companyName: value,
+        companyDomain: shouldClearLockedDomain ? "" : current.companyDomain
+      };
+    });
+
+    if (selectedCompany && !matchesSelectedCompany) {
+      setSelectedCompany(null);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (
       formData.companyName.trim().length < 2 ||
-      formData.companyDomain.trim().length < 3 ||
       formData.recruiterName.trim().length < 2 ||
       formData.email.trim().length < 3
     ) {
@@ -79,6 +106,7 @@ export function SubmitRecruiterForm() {
       setMessage(
         `Email verified. +${payload.creditsEarned ?? 5} credits awarded. ${payload.verification ?? ""}`
       );
+      setSelectedCompany(null);
       setFormData(INITIAL_FORM);
     } catch {
       setState("error");
@@ -93,12 +121,7 @@ export function SubmitRecruiterForm() {
         <CompanySearchCombobox
           id="company-input"
           onSelect={handleCompanySelect}
-          onValueChange={(value) =>
-            setFormData((current) => ({
-              ...current,
-              companyName: value
-            }))
-          }
+          onValueChange={handleCompanyValueChange}
           placeholder="Type to search existing companies..."
           required
           value={formData.companyName}
@@ -107,16 +130,21 @@ export function SubmitRecruiterForm() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="companyDomain">Company domain *</Label>
+          <Label htmlFor="companyDomain">Company domain</Label>
           <Input
             id="companyDomain"
             placeholder="apple.com"
-            required
+            disabled={!!selectedCompany}
             value={formData.companyDomain}
             onChange={(event) =>
               setFormData((current) => ({ ...current, companyDomain: event.target.value }))
             }
           />
+          <p className="text-xs text-muted-foreground">
+            {selectedCompany
+              ? "Using domain from selected company."
+              : "Optional for new companies. If blank, we'll use the email domain."}
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -139,9 +167,21 @@ export function SubmitRecruiterForm() {
           required
           type="email"
           value={formData.email}
-          onChange={(event) =>
-            setFormData((current) => ({ ...current, email: event.target.value }))
-          }
+          onChange={(event) => {
+            const nextEmail = event.target.value;
+            setFormData((current) => {
+              if (selectedCompany || current.companyDomain.trim()) {
+                return { ...current, email: nextEmail };
+              }
+
+              const inferredDomain = sanitizeDomain(getDomainFromEmail(nextEmail.trim().toLowerCase()));
+              return {
+                ...current,
+                email: nextEmail,
+                companyDomain: inferredDomain || current.companyDomain
+              };
+            });
+          }}
         />
       </div>
 
