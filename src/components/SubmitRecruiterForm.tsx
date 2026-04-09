@@ -206,7 +206,6 @@ export function SubmitRecruiterForm() {
             setFormData((current) => ({ ...current, companyDomain: event.target.value }));
           }}
         />
-        <p className="text-xs text-muted-foreground">Auto-filled from email, editable.</p>
       </div>
 
       <StatefulButton

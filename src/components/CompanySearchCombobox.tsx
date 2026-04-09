@@ -47,9 +47,13 @@ export function CompanySearchCombobox({
   const [query, setQuery] = useState(value);
   const [results, setResults] = useState<CompanySearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectionLocked, setSelectionLocked] = useState(false);
 
   useEffect(() => {
     setQuery(value);
+    if (value.trim().length === 0) {
+      setSelectionLocked(false);
+    }
   }, [value]);
 
   useEffect(() => {
@@ -87,6 +91,7 @@ export function CompanySearchCombobox({
   }, [query, minQueryLength]);
 
   function handleInputChange(nextValue: string) {
+    setSelectionLocked(false);
     setQuery(nextValue);
     onValueChange(nextValue);
   }
@@ -96,10 +101,11 @@ export function CompanySearchCombobox({
     onValueChange(company.name);
     setQuery(company.name);
     setResults([]);
+    setSelectionLocked(true);
   }
 
   const trimmedQuery = query.trim();
-  const showSuggestions = trimmedQuery.length > 0;
+  const showSuggestions = trimmedQuery.length > 0 && !selectionLocked;
   const showCreateOption = useMemo(() => {
     if (!allowCustomValue || trimmedQuery.length < minQueryLength || results.length > 0) {
       return false;
