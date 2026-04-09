@@ -72,7 +72,7 @@ export function DashboardSearchExperience({ popularCompanies }: DashboardSearchE
   const trimmedQuery = query.trim();
   const showResultsCard = trimmedQuery.length >= MIN_QUERY;
   const visiblePopularCompanies = popularCompanies.slice(0, MAX_POPULAR_CHIPS);
-  const hiddenPopularCount = Math.max(popularCompanies.length - visiblePopularCompanies.length, 0);
+  const hasHiddenPopularCompanies = popularCompanies.length > visiblePopularCompanies.length;
 
   return (
     <div className="space-y-6">
@@ -119,8 +119,8 @@ export function DashboardSearchExperience({ popularCompanies }: DashboardSearchE
                   <Badge variant="secondary">{company.contactCount}</Badge>
                 </button>
               ))}
-              {hiddenPopularCount > 0 ? (
-                <span className="px-1 text-sm font-medium text-slate-500">and {hiddenPopularCount} more</span>
+              {hasHiddenPopularCompanies ? (
+                <span className="px-1 text-sm font-medium text-slate-500">and more</span>
               ) : null}
             </div>
           ) : null}
