@@ -91,8 +91,8 @@ export function DeleteEmailButton({ emailId }: { emailId: string }) {
         <DialogHeader>
           <DialogTitle>Delete recruiter email?</DialogTitle>
           <DialogDescription>
-            This will permanently remove the recruiter email and all associated reports and unlock
-            records.
+            This will permanently remove the recruiter email and all associated reports/unlocks.
+            Submission credits awarded for this email will be revoked from the submitter.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
