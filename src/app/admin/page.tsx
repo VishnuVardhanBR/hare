@@ -162,10 +162,10 @@ function LineTrendChart({ data }: { data: DailySeriesRow[] }) {
         </span>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="w-full">
         <svg
           aria-label="Verified submissions and unlocks trend"
-          className="h-56 min-w-[620px] w-full"
+          className="h-56 w-full"
           role="img"
           viewBox={`0 0 ${width} ${height}`}
         >
@@ -256,10 +256,10 @@ function CreditsBarChart({ data }: { data: DailySeriesRow[] }) {
         </span>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="w-full">
         <svg
           aria-label="Credits flow trend"
-          className="h-56 min-w-[620px] w-full"
+          className="h-56 w-full"
           role="img"
           viewBox={`0 0 ${width} ${height}`}
         >
@@ -425,7 +425,7 @@ export default async function AdminPage({
             select: { name: true }
           },
           submittedBy: {
-            select: { displayName: true }
+            select: { email: true }
           }
         },
         orderBy: {
@@ -629,7 +629,7 @@ export default async function AdminPage({
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4">
             <Card className="rounded-3xl border border-white/60 bg-white/70 py-5 shadow-sm backdrop-blur">
               <CardHeader className="space-y-1 px-5 sm:px-6">
                 <CardTitle className="text-base font-semibold">Supply vs demand trend</CardTitle>
@@ -790,7 +790,7 @@ export default async function AdminPage({
                         {entry.verificationStatus.toLowerCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell>{entry.submittedBy.displayName}</TableCell>
+                    <TableCell>{entry.submittedBy.email}</TableCell>
                     <TableCell>
                       <DeleteEmailButton emailId={entry.id} />
                     </TableCell>
