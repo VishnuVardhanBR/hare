@@ -7,7 +7,6 @@ import { CheckCircle2Icon, FlagIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -205,66 +204,65 @@ export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntr
           const department = entry.department || "Unknown team";
 
           return (
-            <Card key={entry.id}>
-              <CardContent className="space-y-4 pt-6">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="space-y-1.5">
-                    <p
-                      className={cn(
-                        "text-base font-semibold",
-                        !entry.unlocked && "select-none blur-[2px]"
-                      )}
-                    >
-                      {entry.recruiterName}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {title} | {department}
-                    </p>
-                    <p
-                      className={cn(
-                        "font-mono text-sm",
-                        !entry.unlocked && "select-none blur-[2px]"
-                      )}
-                    >
-                      {entry.email}
-                    </p>
-                  </div>
+            <Card
+              className="rounded-3xl border border-white/65 bg-white/65 shadow-lg shadow-slate-900/5 backdrop-blur-xl"
+              key={entry.id}
+              size="sm"
+            >
+              <CardContent className="space-y-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <p
+                    className={cn(
+                      "text-base font-semibold leading-tight",
+                      !entry.unlocked && "select-none blur-[2px]"
+                    )}
+                  >
+                    {entry.recruiterName}
+                  </p>
 
                   {entry.unlocked ? (
-                    <Badge className="border-green-200 bg-green-50 text-green-700" variant="secondary">
+                    <p className="inline-flex h-8 w-fit items-center gap-1.5 self-start rounded-full border border-emerald-200/80 bg-emerald-50/70 px-3 text-sm font-medium text-emerald-700 backdrop-blur">
                       <CheckCircle2Icon className="size-3.5" />
                       Unlocked
-                    </Badge>
+                    </p>
                   ) : (
-                    <Badge variant="secondary">Locked</Badge>
+                    <Button
+                      className="h-8 self-start rounded-full border-primary/80 bg-primary px-3.5 text-sm text-primary-foreground shadow-sm shadow-primary/25 hover:bg-primary/90"
+                      disabled={(!isAdmin && credits < 1) || activeUnlockId !== null}
+                      onClick={() => unlockEntry(entry.id)}
+                      type="button"
+                    >
+                      {activeUnlockId === entry.id
+                        ? "Unlocking..."
+                        : isAdmin
+                          ? "Unlock contact"
+                          : "Unlock for 1 credit"}
+                    </Button>
                   )}
                 </div>
 
-                {entry.unlocked ? (
-                  <p className="text-xs text-muted-foreground">
-                    Last verified:{" "}
-                    {entry.lastVerifiedAt
-                      ? new Date(entry.lastVerifiedAt).toLocaleDateString()
-                      : "Unknown"}
-                  </p>
-                ) : (
-                  <Button
-                    disabled={(!isAdmin && credits < 1) || activeUnlockId !== null}
-                    onClick={() => unlockEntry(entry.id)}
-                    type="button"
-                  >
-                    {activeUnlockId === entry.id
-                      ? "Unlocking..."
-                      : isAdmin
-                        ? "Unlock contact"
-                        : "Unlock for 1 credit"}
-                  </Button>
-                )}
+                <p className="text-sm text-muted-foreground">
+                  {title} | {department}
+                </p>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <p
+                  className={cn(
+                    "font-mono text-sm leading-tight",
+                    !entry.unlocked && "select-none blur-[2px]"
+                  )}
+                >
+                  {entry.email}
+                </p>
+
+                <div className="flex items-center">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button size="sm" type="button" variant="ghost">
+                      <Button
+                        className="h-8 cursor-pointer rounded-full px-2.5 text-slate-700 hover:bg-white/70"
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                      >
                         <FlagIcon className="size-4" />
                         Report
                       </Button>

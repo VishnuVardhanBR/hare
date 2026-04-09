@@ -86,9 +86,6 @@ export function SubmitBulkUpload() {
         <pre className="overflow-x-auto rounded-md border bg-background p-2 text-xs">
           company,domain,email,recruiter_name,title,department
         </pre>
-        <p className="text-xs text-muted-foreground">
-          Max 50 rows per upload. Verified unique rows earn 5 credits each.
-        </p>
       </div>
 
       <form className="space-y-3" onSubmit={handleSubmit}>
