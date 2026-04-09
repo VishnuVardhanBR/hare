@@ -10,7 +10,7 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 
 **Per-email unlock, not per-company.** The user explicitly chose this for monetization. 1 credit = 1 recruiter email revealed. Don't change this to per-company.
 
-**MVP quality controls are intentionally minimal.** Automated verification on submit (format + domain + provider check) plus a manual "Report" button that goes to an admin panel. No automated flag thresholds, no reputation scores, no credit penalties. The user said the full flagging system was "too complex for MVP." These are listed as post-MVP in the spec.
+**MVP quality controls are intentionally minimal.** Automated verification on submit (format + domain/company match + Abstract verification) plus a manual "Report" button that goes to an admin panel. No automated flag thresholds, no reputation scores, no credit penalties. The user said the full flagging system was "too complex for MVP." These are listed as post-MVP in the spec.
 
 **No passwords.** Google OAuth only, restricted to .edu email domains. First login auto-creates the account. Don't add a password-based auth flow.
 
@@ -30,11 +30,9 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 
 ## Technical Gotchas
 
-**Email verification provider:** Abstract Email Reputation API is the default verification provider for user credit-earning submissions. `EMAIL_VERIFICATION_PROVIDER=smtp` is available as an operational fallback.
+**Email verification provider:** Abstract Email Reputation API is the only verification provider for user credit-earning submissions.
 
-**SMTP verification has limits (fallback mode).** Google Workspace and other catch-all mail servers accept all addresses - you can't confirm the specific mailbox exists. For these, mark as "domain verified, mailbox unconfirmed" and move on.
-
-**Rate-limit SMTP checks (fallback mode).** If you hammer corporate mail servers with verification requests, the app's IP gets blacklisted. Implement rate limiting per domain.
+**Fail-closed verification behavior:** If Abstract is unavailable, unauthorized, rate-limited, or returns an invalid response, reject the submission instead of awarding credits.
 
 **Company name normalization matters.** "Apple", "Apple Inc", "Apple Inc." should all resolve to the same company. Build this into the company creation/search flow from the start.
 
@@ -47,7 +45,7 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 - Support/admin pages: Opt-out page, Admin bulk CSV upload page
 - Google OAuth with .edu restriction
 - Credit system (earn, spend, purchase)
-- Email verification pipeline (format + domain + provider validation)
+- Email verification pipeline (format + domain/company match + Abstract validation)
 - Company search with autocomplete
 - Per-email unlock with blur/reveal
 - Report button (sends to admin panel)
@@ -114,4 +112,5 @@ Required GitHub Secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
 - `DATABASE_URL`, `DIRECT_URL` (Supabase pooled + direct connection strings)
 - `ADMIN_EMAILS` (comma-separated admin emails, e.g. `vbheemreddy@umass.edu,jerinthomas@umass.edu`)
 - `ENABLE_CREDIT_PURCHASES`
+- Abstract verification vars: `ABSTRACT_API_KEY`, `ABSTRACT_API_KEYS`, `ABSTRACT_API_KEY_SECONDARY`, `ABSTRACT_API_BASE_URL`, `ABSTRACT_TIMEOUT_MS`, `ABSTRACT_MIN_INTERVAL_MS`, `ABSTRACT_MIN_QUALITY_SCORE`
 - Stripe vars when purchases are enabled: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_10`, `STRIPE_PRICE_25`, `STRIPE_PRICE_50`
