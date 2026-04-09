@@ -4,6 +4,7 @@ import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { ChevronDownIcon, RabbitIcon, SearchIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { SignInButton } from "@/components/AuthButtons";
 import { CreditBadge } from "@/components/CreditBadge";
@@ -29,10 +30,17 @@ type NavbarProps = {
   isAdmin: boolean;
 };
 
-const BASE_LINKS = [
+type NavLink = {
+  href: string;
+  label: string;
+  icon?: LucideIcon;
+  accent?: boolean;
+};
+
+const BASE_LINKS: NavLink[] = [
   { href: "/dashboard", label: "Search", icon: SearchIcon, accent: true },
   { href: "/submit", label: "Submit" }
-] as const;
+];
 
 function getInitials(name: string) {
   const segments = name
