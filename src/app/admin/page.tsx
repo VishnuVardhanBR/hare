@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { ReportStatus } from "@prisma/client";
 
 import { DeleteEmailButton, ResolveReportButton } from "@/components/AdminActions";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -100,11 +102,16 @@ export default async function AdminPage() {
 
   return (
     <section className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Admin panel</h1>
-        <p className="text-sm text-muted-foreground">
-          Manual moderation for reports and recruiter email submissions.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight">Admin panel</h1>
+          <p className="text-sm text-muted-foreground">
+            Manual moderation for reports and recruiter email submissions.
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/admin/bulk-upload">Bulk upload CSV</Link>
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">

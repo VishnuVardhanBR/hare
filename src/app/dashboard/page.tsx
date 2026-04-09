@@ -14,11 +14,12 @@ import {
 } from "@/components/ui/card";
 import { isCreditPurchasesEnabled } from "@/lib/featureFlags";
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/session";
+import { isAdminEmail, requireSession } from "@/lib/session";
 
 export default async function DashboardPage() {
   const session = await requireSession();
   const creditPurchasesEnabled = isCreditPurchasesEnabled();
+  const isAdmin = isAdminEmail(session.user.email);
 
   const [user, topCompanies] = await Promise.all([
     prisma.user.findUnique({
@@ -53,7 +54,7 @@ export default async function DashboardPage() {
         <CardContent className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Welcome, {user?.displayName ?? "student"}</p>
-            <CreditBadge credits={user?.creditBalance ?? 0} />
+            <CreditBadge credits={user?.creditBalance ?? 0} unlimited={isAdmin} />
           </div>
 
           <Button asChild>

@@ -81,7 +81,7 @@ export function Navbar({ user, creditBalance, isAdmin }: NavbarProps) {
               })}
             </nav>
 
-            <CreditBadge credits={creditBalance} />
+            <CreditBadge credits={creditBalance} unlimited={isAdmin} />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

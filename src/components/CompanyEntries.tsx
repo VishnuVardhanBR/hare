@@ -36,6 +36,7 @@ type RecruiterEntry = {
 type CompanyEntriesProps = {
   initialCredits: number;
   entries: RecruiterEntry[];
+  isAdmin: boolean;
 };
 
 const REPORT_REASONS: ReportReason[] = [
@@ -52,7 +53,7 @@ const REPORT_REASON_LABELS: Record<ReportReason, string> = {
   OTHER: "Other"
 };
 
-export function CompanyEntries({ initialCredits, entries }: CompanyEntriesProps) {
+export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntriesProps) {
   const [credits, setCredits] = useState(initialCredits);
   const [rowState, setRowState] = useState(entries);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -154,14 +155,20 @@ export function CompanyEntries({ initialCredits, entries }: CompanyEntriesProps)
     <div className="space-y-5">
       <Card>
         <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <CreditBadge credits={credits} />
+          {isAdmin ? (
+            <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700" variant="secondary">
+              Unlimited credits (admin)
+            </Badge>
+          ) : (
+            <CreditBadge credits={credits} />
+          )}
           <Badge variant="secondary">
             Unlocked {visibleCount}/{rowState.length}
           </Badge>
         </CardContent>
       </Card>
 
-      {credits < 1 && rowState.some((entry) => !entry.unlocked) ? (
+      {!isAdmin && credits < 1 && rowState.some((entry) => !entry.unlocked) ? (
         <Alert variant="destructive">
           <AlertDescription>
             You are out of credits. Submit a valid recruiter email to earn 5 credits. {" "}
@@ -230,11 +237,15 @@ export function CompanyEntries({ initialCredits, entries }: CompanyEntriesProps)
                   </p>
                 ) : (
                   <Button
-                    disabled={credits < 1 || activeUnlockId !== null}
+                    disabled={(!isAdmin && credits < 1) || activeUnlockId !== null}
                     onClick={() => unlockEntry(entry.id)}
                     type="button"
                   >
-                    {activeUnlockId === entry.id ? "Unlocking..." : "Unlock for 1 credit"}
+                    {activeUnlockId === entry.id
+                      ? "Unlocking..."
+                      : isAdmin
+                        ? "Unlock contact"
+                        : "Unlock for 1 credit"}
                   </Button>
                 )}
 

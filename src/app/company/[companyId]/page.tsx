@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { maskEmail, maskName } from "@/lib/masking";
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/session";
+import { isAdminEmail, requireSession } from "@/lib/session";
 
 type CompanyPageProps = {
   params: Promise<{ companyId: string }>;
@@ -21,6 +21,7 @@ type CompanyPageProps = {
 export default async function CompanyPage({ params }: CompanyPageProps) {
   const { companyId } = await params;
   const session = await requireSession();
+  const isAdmin = isAdminEmail(session.user.email);
 
   const [company, unlocks, user] = await Promise.all([
     prisma.company.findUnique({
@@ -106,7 +107,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
           </CardContent>
         </Card>
       ) : (
-        <CompanyEntries initialCredits={user?.creditBalance ?? 0} entries={entries} />
+        <CompanyEntries entries={entries} initialCredits={user?.creditBalance ?? 0} isAdmin={isAdmin} />
       )}
     </section>
   );

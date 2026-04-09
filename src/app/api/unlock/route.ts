@@ -6,6 +6,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { applyCreditTransaction, InsufficientCreditsError } from "@/lib/credits";
 import { prisma } from "@/lib/prisma";
+import { isAdminEmail } from "@/lib/session";
 
 const unlockSchema = z.object({
   emailId: z.string().uuid()
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
 
   const userId = session.user.id;
   const emailId = parsed.data.emailId;
+  const isAdmin = isAdminEmail(session.user.email);
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -58,13 +60,15 @@ export async function POST(request: Request) {
         };
       }
 
-      await applyCreditTransaction({
-        userId,
-        amount: -1,
-        type: CreditTransactionType.UNLOCK,
-        referenceId: emailId,
-        tx
-      });
+      if (!isAdmin) {
+        await applyCreditTransaction({
+          userId,
+          amount: -1,
+          type: CreditTransactionType.UNLOCK,
+          referenceId: emailId,
+          tx
+        });
+      }
 
       await tx.unlock.create({
         data: { userId, emailId }

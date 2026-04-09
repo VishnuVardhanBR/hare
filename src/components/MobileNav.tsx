@@ -111,7 +111,7 @@ export function MobileNav({ user, creditBalance, isAdmin }: MobileNavProps) {
 
         <div className="justify-self-end">
           {user ? (
-            <CreditBadge className="text-xs" credits={creditBalance} />
+            <CreditBadge className="text-xs" credits={creditBalance} unlimited={isAdmin} />
           ) : hideLandingSignIn ? null : (
             <SignInButton className="h-8 px-3 text-xs" />
           )}

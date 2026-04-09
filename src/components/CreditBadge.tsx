@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 type CreditBadgeProps = {
   credits: number;
+  unlimited?: boolean;
   className?: string;
 };
 
@@ -12,7 +13,7 @@ function creditLabel(credits: number) {
   return credits === 1 ? "1 credit" : `${credits} credits`;
 }
 
-export function CreditBadge({ credits, className }: CreditBadgeProps) {
+export function CreditBadge({ credits, unlimited = false, className }: CreditBadgeProps) {
   return (
     <Badge
       className={cn(
@@ -22,7 +23,7 @@ export function CreditBadge({ credits, className }: CreditBadgeProps) {
       variant="secondary"
     >
       <CoinsIcon className="size-3.5" />
-      {creditLabel(credits)}
+      {unlimited ? "Unlimited credits" : creditLabel(credits)}
     </Badge>
   );
 }
