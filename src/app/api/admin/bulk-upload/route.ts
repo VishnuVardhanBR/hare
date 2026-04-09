@@ -3,48 +3,17 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import {
+  ALLOWED_BULK_HEADERS,
+  REQUIRED_BULK_HEADERS,
+  parseCsv
+} from "@/app/api/_shared/csv";
 import { authOptions } from "@/lib/auth";
 import { normalizeCompanyName, sanitizeDomain } from "@/lib/company";
 import { prisma } from "@/lib/prisma";
 import { isAdminEmail } from "@/lib/session";
 
-const REQUIRED_HEADERS = ["company", "domain", "email", "recruiter_name"] as const;
-const OPTIONAL_HEADERS = ["title", "department"] as const;
-const ALLOWED_HEADERS = [...REQUIRED_HEADERS, ...OPTIONAL_HEADERS];
 const emailSchema = z.string().email();
-
-type ParsedRow = {
-  rowNumber: number;
-  values: Record<string, string>;
-};
-
-function parseCsv(raw: string): { headers: string[]; rows: ParsedRow[] } {
-  const lines = raw
-    .replace(/^\uFEFF/, "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (lines.length === 0) {
-    return { headers: [], rows: [] };
-  }
-
-  const headers = lines[0].split(",").map((cell) => cell.trim().toLowerCase());
-
-  const rows = lines.slice(1).map((line, index) => {
-    const values = line.split(",").map((cell) => cell.trim());
-    const record = Object.fromEntries(
-      headers.map((header, valueIndex) => [header, values[valueIndex] ?? ""])
-    );
-
-    return {
-      rowNumber: index + 2,
-      values: record
-    };
-  });
-
-  return { headers, rows };
-}
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -67,7 +36,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "CSV is empty." }, { status: 400 });
   }
 
-  const missingHeaders = REQUIRED_HEADERS.filter((header) => !headers.includes(header));
+  const missingHeaders = REQUIRED_BULK_HEADERS.filter((header) => !headers.includes(header));
   if (missingHeaders.length > 0) {
     return NextResponse.json(
       {
@@ -77,11 +46,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const invalidHeaders = headers.filter((header) => !ALLOWED_HEADERS.includes(header as never));
+  const invalidHeaders = headers.filter((header) => !ALLOWED_BULK_HEADERS.includes(header as never));
   if (invalidHeaders.length > 0) {
     return NextResponse.json(
       {
-        error: `Unexpected headers: ${invalidHeaders.join(", ")}. Allowed headers: ${ALLOWED_HEADERS.join(", ")}.`
+        error: `Unexpected headers: ${invalidHeaders.join(", ")}. Allowed headers: ${ALLOWED_BULK_HEADERS.join(", ")}.`
       },
       { status: 400 }
     );

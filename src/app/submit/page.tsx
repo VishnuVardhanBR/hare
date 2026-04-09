@@ -1,4 +1,4 @@
-import { SubmitRecruiterForm } from "@/components/SubmitRecruiterForm";
+import { SubmitModes } from "@/components/SubmitModes";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireSession } from "@/lib/session";
 
@@ -16,7 +16,7 @@ export default async function SubmitPage() {
 
       <Card className="rounded-3xl border border-white/60 bg-white/70 shadow-xl backdrop-blur-xl">
         <CardContent className="pt-5 sm:pt-6">
-          <SubmitRecruiterForm />
+          <SubmitModes />
         </CardContent>
       </Card>
     </section>
