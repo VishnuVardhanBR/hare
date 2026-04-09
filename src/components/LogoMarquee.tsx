@@ -21,16 +21,19 @@ function LogoItem({ company }: { company: MarqueeCompany }) {
   }
 
   return (
-    <div className="relative flex h-10 w-28 shrink-0 items-center justify-center">
+    <div className="relative flex h-10 shrink-0 items-center gap-2 px-1">
       <Image
         alt={company.name}
-        className="max-h-10 w-auto object-contain opacity-60 grayscale transition hover:opacity-100 hover:grayscale-0"
+        className="size-8 object-contain opacity-85 transition hover:opacity-100"
         height={40}
         onError={() => setFailed(true)}
         src={company.logoUrl}
         unoptimized
-        width={112}
+        width={40}
       />
+      <span className="whitespace-nowrap text-sm font-medium text-slate-500">
+        {company.name}
+      </span>
     </div>
   );
 }
@@ -47,7 +50,7 @@ export function LogoMarquee({ companies }: LogoMarqueeProps) {
       aria-hidden
       className="relative w-full overflow-hidden py-6 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]"
     >
-      <div className="flex w-max animate-marquee items-center gap-12 hover:[animation-play-state:paused]">
+      <div className="flex w-max animate-marquee items-center gap-10 hover:[animation-play-state:paused]">
         {track.map((company, index) => (
           <LogoItem company={company} key={`${company.id}-${index}`} />
         ))}
