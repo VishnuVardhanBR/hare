@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CopyTextButton } from "@/components/ui/copy-text-button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
@@ -248,14 +249,19 @@ export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntr
                   {title} | {department}
                 </p>
 
-                <p
-                  className={cn(
-                    "font-mono text-sm leading-tight",
-                    !entry.unlocked && "select-none blur-[2px]"
-                  )}
-                >
-                  {entry.email}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p
+                    className={cn(
+                      "font-mono text-sm leading-tight",
+                      !entry.unlocked && "select-none blur-[2px]"
+                    )}
+                  >
+                    {entry.email}
+                  </p>
+                  {entry.unlocked ? (
+                    <CopyTextButton className="h-6 px-2 text-[11px]" value={entry.email} />
+                  ) : null}
+                </div>
 
                 <div className="flex items-center">
                   <Popover>

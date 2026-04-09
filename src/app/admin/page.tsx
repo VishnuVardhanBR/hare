@@ -5,7 +5,6 @@ import { DeleteEmailButton, ResolveReportButton } from "@/components/AdminAction
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CopyTextButton } from "@/components/ui/copy-text-button";
 import {
   Table,
   TableBody,
@@ -687,13 +686,7 @@ export default async function AdminPage({
                     <TableCell>
                       <div className="space-y-0.5">
                         <p>{report.recruiterEmail.recruiterName}</p>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <p className="text-xs text-slate-500">{report.recruiterEmail.email}</p>
-                          <CopyTextButton
-                            className="h-6 px-2 text-[11px]"
-                            value={report.recruiterEmail.email}
-                          />
-                        </div>
+                        <p className="text-xs text-slate-500">{report.recruiterEmail.email}</p>
                       </div>
                     </TableCell>
                       <TableCell>
@@ -786,10 +779,7 @@ export default async function AdminPage({
                     <TableCell>
                       <div className="space-y-0.5">
                         <p>{entry.recruiterName}</p>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <p className="text-xs text-slate-500">{entry.email}</p>
-                          <CopyTextButton className="h-6 px-2 text-[11px]" value={entry.email} />
-                        </div>
+                        <p className="text-xs text-slate-500">{entry.email}</p>
                       </div>
                     </TableCell>
                     <TableCell>

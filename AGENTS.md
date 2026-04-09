@@ -12,11 +12,11 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 
 **MVP quality controls are intentionally minimal.** Automated verification on submit (format + domain + SMTP) plus a manual "Report" button that goes to an admin panel. No automated flag thresholds, no reputation scores, no credit penalties. The user said the full flagging system was "too complex for MVP." These are listed as post-MVP in the spec.
 
-**No passwords.** Google OAuth only, restricted to .edu email domains. First login auto-creates the account with 1 free credit. Don't add a password-based auth flow.
+**No passwords.** Google OAuth only, restricted to .edu email domains. First login auto-creates the account. Don't add a password-based auth flow.
 
 **Blurred display strategy.** On company pages, show title and department in clear text but blur/mask the recruiter name and email. This lets students decide WHICH contact to unlock based on role relevance. e.g., "S***** Tech Recruiter | New Grad Team" is enough to decide.
 
-**Credit economics are final for regular users.** +1 on signup, +5 per verified submission, -1 per unlock. Admin accounts are the exception: admin unlocks do not deduct credits (enforced server-side in `/api/unlock`). Don't change this without asking.
+**Credit economics are final for regular users.** +5 per verified submission, -1 per unlock. Admin accounts are the exception: admin unlocks do not deduct credits (enforced server-side in `/api/unlock`). Don't change this without asking.
 
 ## Things NOT in the Spec That Matter
 

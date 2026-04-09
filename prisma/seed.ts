@@ -1,7 +1,6 @@
 import {
   CreditTransactionType,
-  RecruiterVerificationStatus,
-  type PrismaClient
+  RecruiterVerificationStatus
 } from "@prisma/client";
 
 import { normalizeCompanyName } from "../src/lib/company";
@@ -59,37 +58,6 @@ const SEED_ENTRIES: SeedEntry[] = [
   }
 ];
 
-async function ensureSignupBonus(userId: string, db: PrismaClient): Promise<void> {
-  const existing = await db.creditTransaction.findFirst({
-    where: {
-      userId,
-      type: CreditTransactionType.SIGNUP_BONUS
-    },
-    select: { id: true }
-  });
-
-  if (existing) {
-    return;
-  }
-
-  await db.user.update({
-    where: { id: userId },
-    data: {
-      creditBalance: {
-        increment: 1
-      }
-    }
-  });
-
-  await db.creditTransaction.create({
-    data: {
-      userId,
-      amount: 1,
-      type: CreditTransactionType.SIGNUP_BONUS
-    }
-  });
-}
-
 async function main() {
   const seedUser = await prisma.user.upsert({
     where: { email: "seed@example.edu" },
@@ -100,8 +68,6 @@ async function main() {
       university: "example.edu"
     }
   });
-
-  await ensureSignupBonus(seedUser.id, prisma);
 
   for (const entry of SEED_ENTRIES) {
     const company = await prisma.company.upsert({
