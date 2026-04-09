@@ -37,6 +37,7 @@ const BASE_LINKS = [
 
 export function MobileNav({ user, creditBalance, isAdmin }: MobileNavProps) {
   const pathname = usePathname();
+  const hideLandingSignIn = !user && pathname === "/";
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur md:hidden">
@@ -111,7 +112,7 @@ export function MobileNav({ user, creditBalance, isAdmin }: MobileNavProps) {
         <div className="justify-self-end">
           {user ? (
             <CreditBadge className="text-xs" credits={creditBalance} />
-          ) : (
+          ) : hideLandingSignIn ? null : (
             <SignInButton className="h-8 px-3 text-xs" />
           )}
         </div>

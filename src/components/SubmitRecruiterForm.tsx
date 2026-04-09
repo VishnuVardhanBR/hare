@@ -89,9 +89,9 @@ export function SubmitRecruiterForm() {
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
       <div className="space-y-2">
-        <Label htmlFor="company-combobox">Company</Label>
+        <Label htmlFor="company-input">Company name *</Label>
         <CompanySearchCombobox
-          id="company-combobox"
+          id="company-input"
           onSelect={handleCompanySelect}
           onValueChange={(value) =>
             setFormData((current) => ({
@@ -100,13 +100,14 @@ export function SubmitRecruiterForm() {
             }))
           }
           placeholder="Type to search existing companies..."
+          required
           value={formData.companyName}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="companyDomain">Company domain</Label>
+          <Label htmlFor="companyDomain">Company domain *</Label>
           <Input
             id="companyDomain"
             placeholder="apple.com"
@@ -119,7 +120,7 @@ export function SubmitRecruiterForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="recruiterName">Recruiter name</Label>
+          <Label htmlFor="recruiterName">Recruiter name *</Label>
           <Input
             id="recruiterName"
             required
@@ -132,7 +133,7 @@ export function SubmitRecruiterForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email">Work email</Label>
+        <Label htmlFor="email">Work email *</Label>
         <Input
           id="email"
           required
@@ -146,7 +147,7 @@ export function SubmitRecruiterForm() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
+          <Label htmlFor="title">Title (optional)</Label>
           <Input
             id="title"
             value={formData.title}
@@ -157,7 +158,7 @@ export function SubmitRecruiterForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="department">Department</Label>
+          <Label htmlFor="department">Department (optional)</Label>
           <Input
             id="department"
             value={formData.department}

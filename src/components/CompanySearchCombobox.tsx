@@ -1,19 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronsUpDownIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList
-} from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +26,8 @@ type CompanySearchComboboxProps = {
   className?: string;
   disabled?: boolean;
   showContactCount?: boolean;
+  required?: boolean;
+  allowCustomValue?: boolean;
 };
 
 export function CompanySearchCombobox({
@@ -48,9 +40,10 @@ export function CompanySearchCombobox({
   minQueryLength = 2,
   className,
   disabled = false,
-  showContactCount = false
+  showContactCount = false,
+  required = false,
+  allowCustomValue = true
 }: CompanySearchComboboxProps) {
-  const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(value);
   const [results, setResults] = useState<CompanySearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -60,13 +53,10 @@ export function CompanySearchCombobox({
   }, [value]);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
-
     const trimmed = query.trim();
     if (trimmed.length < minQueryLength) {
       setResults([]);
+      setLoading(false);
       return;
     }
 
@@ -94,12 +84,7 @@ export function CompanySearchCombobox({
       controller.abort();
       clearTimeout(timeoutId);
     };
-  }, [open, query, minQueryLength]);
-
-  const triggerLabel = useMemo(() => {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : placeholder;
-  }, [value, placeholder]);
+  }, [query, minQueryLength]);
 
   function handleInputChange(nextValue: string) {
     setQuery(nextValue);
@@ -110,89 +95,86 @@ export function CompanySearchCombobox({
     onSelect(company);
     onValueChange(company.name);
     setQuery(company.name);
-    setOpen(false);
+    setResults([]);
   }
 
-  const showCreateOption = query.trim().length >= minQueryLength;
-  const commandEmptyMessage =
-    query.trim().length < minQueryLength
-      ? `Type at least ${minQueryLength} characters.`
-      : emptyMessage;
+  const trimmedQuery = query.trim();
+  const showSuggestions = trimmedQuery.length > 0;
+  const showCreateOption = useMemo(() => {
+    if (!allowCustomValue || trimmedQuery.length < minQueryLength || results.length > 0) {
+      return false;
+    }
+
+    return true;
+  }, [allowCustomValue, minQueryLength, results.length, trimmedQuery.length]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          aria-expanded={open}
-          className={cn("w-full justify-between font-normal", className)}
-          disabled={disabled}
-          id={id}
-          role="combobox"
-          type="button"
-          variant="outline"
-        >
-          <span className="truncate">{triggerLabel}</span>
-          <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
+    <div className={cn("space-y-2", className)}>
+      <Input
+        disabled={disabled}
+        id={id}
+        placeholder={placeholder}
+        required={required}
+        value={query}
+        onChange={(event) => handleInputChange(event.target.value)}
+      />
 
-      <PopoverContent align="start" className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command shouldFilter={false}>
-          <CommandInput
-            placeholder={placeholder}
-            value={query}
-            onValueChange={handleInputChange}
-          />
-          <CommandList>
-            {loading ? (
-              <div className="space-y-2 p-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-              </div>
-            ) : null}
+      {showSuggestions ? (
+        <div className="overflow-hidden rounded-md border bg-background">
+          {loading ? (
+            <div className="space-y-2 p-2">
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-full" />
+            </div>
+          ) : null}
 
-            {!loading ? <CommandEmpty>{commandEmptyMessage}</CommandEmpty> : null}
+          {!loading && trimmedQuery.length < minQueryLength ? (
+            <p className="px-3 py-2 text-sm text-muted-foreground">
+              Type at least {minQueryLength} characters.
+            </p>
+          ) : null}
 
-            {!loading && results.length > 0 ? (
-              <CommandGroup>
-                {results.map((company) => (
-                  <CommandItem
-                    key={company.id}
-                    value={`${company.name} ${company.domain ?? ""}`}
-                    onSelect={() => selectCompany(company)}
+          {!loading && trimmedQuery.length >= minQueryLength && results.length > 0 ? (
+            <ul className="divide-y">
+              {results.map((company) => (
+                <li key={company.id}>
+                  <button
+                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60"
+                    type="button"
+                    onClick={() => selectCompany(company)}
                   >
-                    <div className="flex w-full items-center justify-between gap-2">
-                      <span className="truncate font-medium">{company.name}</span>
-                      {showContactCount ? (
-                        <Badge className="shrink-0" variant="secondary">
-                          {company.contactCount ?? 0}
-                        </Badge>
-                      ) : null}
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            ) : null}
+                    <span className="truncate font-medium">{company.name}</span>
+                    {showContactCount ? (
+                      <Badge className="shrink-0" variant="secondary">
+                        {company.contactCount ?? 0}
+                      </Badge>
+                    ) : null}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
 
-            {!loading && results.length === 0 && showCreateOption ? (
-              <CommandGroup>
-                <CommandItem
-                  value={query}
-                  onSelect={() => {
-                    const trimmed = query.trim();
-                    onValueChange(trimmed);
-                    setQuery(trimmed);
-                    setOpen(false);
+          {!loading && trimmedQuery.length >= minQueryLength && results.length === 0 ? (
+            <div className="space-y-1 p-2">
+              <p className="px-1 py-1 text-sm text-muted-foreground">{emptyMessage}</p>
+              {showCreateOption ? (
+                <button
+                  className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-muted/60"
+                  type="button"
+                  onClick={() => {
+                    onValueChange(trimmedQuery);
+                    setQuery(trimmedQuery);
                   }}
                 >
-                  Use &quot;{query.trim()}&quot;
-                </CommandItem>
-              </CommandGroup>
-            ) : null}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+                  Use &quot;{trimmedQuery}&quot;
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }

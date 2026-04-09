@@ -23,6 +23,7 @@ export function CompanySearch({ defaultQuery = "" }: CompanySearchProps) {
   return (
     <div className="space-y-3">
       <CompanySearchCombobox
+        allowCustomValue={false}
         emptyMessage="No companies found."
         onSelect={handleSelect}
         onValueChange={setQuery}

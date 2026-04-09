@@ -91,11 +91,6 @@ export default async function DashboardPage() {
               credits.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <Link href="/submit">Submit a valid email (+5)</Link>
-            </Button>
-          </CardContent>
         </Card>
       )}
 

@@ -50,6 +50,7 @@ function getInitials(name: string) {
 
 export function Navbar({ user, creditBalance, isAdmin }: NavbarProps) {
   const pathname = usePathname();
+  const hideLandingSignIn = !user && pathname === "/";
 
   return (
     <header className="sticky top-0 z-50 hidden border-b bg-background/95 backdrop-blur md:block">
@@ -123,7 +124,7 @@ export function Navbar({ user, creditBalance, isAdmin }: NavbarProps) {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        ) : (
+        ) : hideLandingSignIn ? null : (
           <SignInButton className="h-9 px-4" />
         )}
       </div>
