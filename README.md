@@ -13,7 +13,7 @@ Credit-based recruiter email sharing platform for CS/tech students.
 - Landing, dashboard, company, submit, admin, opt-out pages
 - Google OAuth sign-in (restricted to `.edu` in auth callback)
 - Credit ledger (`+5` verified submit, `-1` unlock, `+purchase`)
-- Verification pipeline (format + company-domain checks + Abstract Email Validation API)
+- Verification pipeline (format + company-domain checks + Abstract Email Reputation API)
 - Company search with autocomplete and per-email unlock flow
 - Report flow to admin panel
 - Stripe checkout + webhook purchase crediting
@@ -58,6 +58,7 @@ Email verification tuning (optional):
 - `ABSTRACT_API_KEY` (single key for `abstract` provider)
 - `ABSTRACT_API_KEYS` (optional comma-separated keys; verifier cycles keys on provider failure)
 - `ABSTRACT_API_KEY_SECONDARY` (optional secondary fallback key)
+- `ABSTRACT_API_BASE_URL` (optional; default `https://emailreputation.abstractapi.com/v1/`)
 - `ABSTRACT_TIMEOUT_MS` (default `5000`)
 - `ABSTRACT_MIN_INTERVAL_MS` (default `1000`; useful for free-plan per-second limits)
 - `ABSTRACT_MIN_QUALITY_SCORE` (default `0.7`)

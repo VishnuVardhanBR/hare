@@ -104,7 +104,9 @@ const SMTP_MIN_INTERVAL_MS = readPositiveIntEnv("SMTP_MIN_INTERVAL_MS", 5000);
 const SMTP_CONNECT_TIMEOUT_MS = readPositiveIntEnv("SMTP_CONNECT_TIMEOUT_MS", 4500);
 const SMTP_MAX_MX_HOSTS = readPositiveIntEnv("SMTP_MAX_MX_HOSTS", 3);
 const SMTP_CHECK_ENABLED = readBooleanEnv("SMTP_CHECK_ENABLED", process.env.VERCEL !== "1");
-const ABSTRACT_API_BASE_URL = "https://emailvalidation.abstractapi.com/v1/";
+const ABSTRACT_API_BASE_URL = (
+  process.env.ABSTRACT_API_BASE_URL ?? "https://emailreputation.abstractapi.com/v1/"
+).trim();
 const ABSTRACT_TIMEOUT_MS = readPositiveIntEnv("ABSTRACT_TIMEOUT_MS", 5000);
 const ABSTRACT_MIN_INTERVAL_MS = readPositiveIntEnv("ABSTRACT_MIN_INTERVAL_MS", 1000);
 const ABSTRACT_MIN_QUALITY_SCORE = clamp(
@@ -467,6 +469,24 @@ type AbstractEmailValidationPayload = {
   is_role_email?: AbstractBooleanField;
   is_catchall_email?: AbstractBooleanField;
   is_mx_found?: AbstractBooleanField;
+  email_deliverability?: {
+    status?: string;
+    status_detail?: string;
+    is_format_valid?: boolean | null;
+    is_smtp_valid?: boolean | null;
+    is_mx_valid?: boolean | null;
+  };
+  email_quality?: {
+    score?: number | string | null;
+    is_free_email?: boolean | null;
+    is_disposable?: boolean | null;
+    is_role?: boolean | null;
+    is_catchall?: boolean | null;
+  };
+  email_risk?: {
+    address_risk_status?: string | null;
+    domain_risk_status?: string | null;
+  };
 };
 
 function verificationFailed(note: string): VerificationResult {
@@ -516,6 +536,11 @@ function parseAbstractScore(value: number | string | null | undefined): number |
   return null;
 }
 
+function isRiskTooHigh(risk: string | null | undefined): boolean {
+  const normalized = (risk ?? "").trim().toLowerCase();
+  return normalized === "medium" || normalized === "high";
+}
+
 async function verifyRecruiterEmailViaSmtp(
   normalizedEmail: string,
   emailDomain: string
@@ -547,6 +572,19 @@ async function verifyRecruiterEmailViaSmtp(
 }
 
 function mapAbstractSuccess(payload: AbstractEmailValidationPayload): VerificationResult {
+  const hasReputationShape =
+    !!payload.email_deliverability ||
+    !!payload.email_quality ||
+    !!payload.email_risk;
+
+  if (hasReputationShape) {
+    return mapAbstractReputationSuccess(payload);
+  }
+
+  return mapAbstractValidationSuccess(payload);
+}
+
+function mapAbstractValidationSuccess(payload: AbstractEmailValidationPayload): VerificationResult {
   const deliverability = (payload.deliverability ?? "").trim().toUpperCase();
   const validFormat = parseAbstractBoolean(payload.is_valid_format);
   const isFreeEmail = parseAbstractBoolean(payload.is_free_email);
@@ -593,6 +631,60 @@ function mapAbstractSuccess(payload: AbstractEmailValidationPayload): Verificati
 
   if (qualityScore === null || qualityScore < ABSTRACT_MIN_QUALITY_SCORE) {
     return verificationFailed("Email quality score is below the acceptance threshold.");
+  }
+
+  return verificationSucceeded("Deliverability verified via Abstract.");
+}
+
+function mapAbstractReputationSuccess(payload: AbstractEmailValidationPayload): VerificationResult {
+  const deliverability = (payload.email_deliverability?.status ?? "").trim().toLowerCase();
+  const isValidFormat = payload.email_deliverability?.is_format_valid === true;
+  const isMxValid = payload.email_deliverability?.is_mx_valid;
+  const qualityScore = parseAbstractScore(payload.email_quality?.score);
+  const isFreeEmail = payload.email_quality?.is_free_email === true;
+  const isDisposableEmail = payload.email_quality?.is_disposable === true;
+  const isRoleEmail = payload.email_quality?.is_role === true;
+  const isCatchallEmail = payload.email_quality?.is_catchall === true;
+  const addressRisk = payload.email_risk?.address_risk_status;
+  const domainRisk = payload.email_risk?.domain_risk_status;
+
+  if (!isValidFormat) {
+    return verificationFailed("Invalid email format.");
+  }
+
+  if (isDisposableEmail) {
+    return verificationFailed("Disposable email domains are not allowed.");
+  }
+
+  if (isFreeEmail) {
+    return verificationFailed("Free email providers are not allowed.");
+  }
+
+  if (isRoleEmail) {
+    return verificationFailed("Role-based inboxes are not allowed.");
+  }
+
+  if (isCatchallEmail) {
+    return verificationFailed("Catch-all inboxes are not accepted.");
+  }
+
+  if (isMxValid === false) {
+    return verificationFailed("Email domain has no MX records.");
+  }
+
+  if (deliverability !== "deliverable") {
+    if (deliverability === "unknown") {
+      return verificationFailed("Email deliverability could not be confirmed.");
+    }
+    return verificationFailed("Email is not deliverable.");
+  }
+
+  if (qualityScore === null || qualityScore < ABSTRACT_MIN_QUALITY_SCORE) {
+    return verificationFailed("Email quality score is below the acceptance threshold.");
+  }
+
+  if (isRiskTooHigh(addressRisk) || isRiskTooHigh(domainRisk)) {
+    return verificationFailed("Email risk level is too high.");
   }
 
   return verificationSucceeded("Deliverability verified via Abstract.");

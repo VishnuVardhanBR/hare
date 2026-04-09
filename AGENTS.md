@@ -30,7 +30,7 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 
 ## Technical Gotchas
 
-**Email verification provider:** Abstract Email Validation is the default verification provider for user credit-earning submissions. `EMAIL_VERIFICATION_PROVIDER=smtp` is available as an operational fallback.
+**Email verification provider:** Abstract Email Reputation API is the default verification provider for user credit-earning submissions. `EMAIL_VERIFICATION_PROVIDER=smtp` is available as an operational fallback.
 
 **SMTP verification has limits (fallback mode).** Google Workspace and other catch-all mail servers accept all addresses - you can't confirm the specific mailbox exists. For these, mark as "domain verified, mailbox unconfirmed" and move on.
 
