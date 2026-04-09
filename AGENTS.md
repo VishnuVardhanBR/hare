@@ -66,13 +66,11 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 
 The user emphasized "VERY SIMPLE AND TO THE POINT PLATFORM" multiple times. Keep the UI minimal. Don't over-design. The core loop is: search -> unlock -> submit -> repeat.
 
-**Frontend redesign complete.** Read `DESIGN.md` for the complete design system specification including:
-- Color palette (blue primary, slate neutrals, amber credits)
-- Typography (Inter font)
-- Component library (Tailwind CSS v4 + shadcn/ui New York variant)
-- Page-by-page layout specs
-- Responsive breakpoints and navigation patterns
-- Interaction patterns (buttons, forms, search, unlock flow)
+**Frontend redesign complete.** Design system at a glance:
+- Color palette: blue primary, slate neutrals, amber credit accent
+- Typography: Inter via `next/font/google`
+- Component library: Tailwind CSS v4 + shadcn/ui (New York variant)
+- Layout: `max-w-4xl` content container, sticky top nav, no footer
 
 **Critical implementation notes:**
 - The previous "UI-only changes" rule was specific to the redesign phase and is no longer global. API/lib updates are allowed when required by product changes.
@@ -90,8 +88,8 @@ The user emphasized "VERY SIMPLE AND TO THE POINT PLATFORM" multiple times. Keep
 ## Deployment
 
 **Platform:** Vercel (migrated from Cloudflare Workers — bundle size exceeded 3 MiB limit)
-**Production URL:** https://hare-indol.vercel.app
-**Custom domain:** Cloudflare DNS A record → 76.76.21.21
+**Production URL:** https://hare.vishnuvardhanbr.com
+**DNS:** Cloudflare A record `hare.vishnuvardhanbr.com` → `76.76.21.21` (DNS only, not proxied)
 
 **Database:** Supabase PostgreSQL (project: `iqnphwkwnzdsjhlofyjx`)
 **Auth:** NextAuth v4, Google OAuth, `.edu` emails only

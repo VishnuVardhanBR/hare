@@ -58,7 +58,19 @@ Email verification tuning (optional):
 - `EMAIL_DNS_NEGATIVE_CACHE_TTL_MS` (default `120000`)
 
 ## Deploy: Vercel + Supabase
-1. Link Vercel project and add env vars:
+
+**Production URL:** https://hare.vishnuvardhanbr.com
+
+### Continuous Deployment
+Push to `main` triggers `.github/workflows/deploy.yml`, which builds and deploys to Vercel production. Pull requests get preview deploys with a commented URL.
+
+Required GitHub Secrets (repo Settings → Secrets and variables → Actions):
+- `VERCEL_TOKEN` — Vercel dashboard → Account Settings → Tokens
+- `VERCEL_ORG_ID` — from `.vercel/project.json` after `vercel link`
+- `VERCEL_PROJECT_ID` — from `.vercel/project.json` after `vercel link`
+
+### First-time Project Setup
+1. Link Vercel project and add env vars (via dashboard or CLI):
    - `npx vercel link`
    - `npx vercel env add DATABASE_URL production`
    - `npx vercel env add DIRECT_URL production`
@@ -68,22 +80,21 @@ Email verification tuning (optional):
    - `npx vercel env add GOOGLE_CLIENT_SECRET production`
    - `npx vercel env add ADMIN_EMAILS production`
    - `npx vercel env add ENABLE_CREDIT_PURCHASES production`
-2. Deploy:
-   - `npm run deploy:vercel`
-3. Add domain to project:
+2. Add domain to project:
    - `npx vercel domains add hare.vishnuvardhanbr.com`
-4. In Cloudflare DNS (zone: `vishnuvardhanbr.com`) add:
+3. In Cloudflare DNS (zone: `vishnuvardhanbr.com`) add:
    - Type: `A`
    - Name: `hare`
    - IPv4: `76.76.21.21`
    - Proxy status: `DNS only`
-5. After DNS verifies in Vercel:
-   - Set `NEXTAUTH_URL=https://hare.vishnuvardhanbr.com`
-   - Redeploy: `npm run deploy:vercel`
-6. Google OAuth (Cloud Console):
+4. After DNS verifies in Vercel, set `NEXTAUTH_URL=https://hare.vishnuvardhanbr.com` and push to `main` to redeploy.
+5. Google OAuth (Cloud Console):
    - Authorized redirect URI: `https://hare.vishnuvardhanbr.com/api/auth/callback/google`
-7. Stripe webhook (if enabled):
+6. Stripe webhook (if enabled):
    - Endpoint: `https://hare.vishnuvardhanbr.com/api/stripe/webhook`
+
+### Manual Deploy (fallback)
+- `npx vercel --prod`
 
 ## CSV Cold-Start Import
 Expected CSV headers:
