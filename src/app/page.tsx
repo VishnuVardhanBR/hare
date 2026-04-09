@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { RabbitIcon } from "lucide-react";
 
 import { SignInButton } from "@/components/AuthButtons";
+import { LogoMarquee } from "@/components/LogoMarquee";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 export default async function LandingPage() {
   const session = await getServerSession(authOptions);
@@ -12,8 +14,17 @@ export default async function LandingPage() {
     redirect("/dashboard");
   }
 
+  const companies = await prisma.company.findMany({
+    select: { id: true, name: true, domain: true },
+    where: {
+      recruiterEmails: { some: {} }
+    },
+    orderBy: { recruiterEmails: { _count: "desc" } },
+    take: 12
+  });
+
   return (
-    <section className="py-4 text-center">
+    <section className="space-y-12 py-4 text-center">
       <div className="space-y-6">
         <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
           <RabbitIcon className="size-7" />
@@ -33,6 +44,8 @@ export default async function LandingPage() {
           <SignInButton className="h-11 px-7 text-base" />
         </div>
       </div>
+
+      <LogoMarquee companies={companies} />
     </section>
   );
 }
