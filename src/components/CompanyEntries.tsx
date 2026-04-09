@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 import { CheckCircle2Icon, FlagIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { CreditBadge } from "@/components/CreditBadge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -164,21 +163,6 @@ export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntr
 
   return (
     <div className="space-y-5">
-      <Card>
-        <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          {isAdmin ? (
-            <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700" variant="secondary">
-              Unlimited credits (admin)
-            </Badge>
-          ) : (
-            <CreditBadge credits={credits} />
-          )}
-          <Badge variant="secondary">
-            Unlocked {visibleCount}/{rowState.length}
-          </Badge>
-        </CardContent>
-      </Card>
-
       {!isAdmin && credits < 1 && rowState.some((entry) => !entry.unlocked) ? (
         <Alert variant="destructive">
           <AlertDescription>

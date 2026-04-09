@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { ChevronDownIcon, RabbitIcon } from "lucide-react";
+import { ChevronDownIcon, RabbitIcon, SearchIcon } from "lucide-react";
 
 import { SignInButton } from "@/components/AuthButtons";
 import { CreditBadge } from "@/components/CreditBadge";
@@ -30,7 +30,7 @@ type NavbarProps = {
 };
 
 const BASE_LINKS = [
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard", label: "Search", icon: SearchIcon, accent: true },
   { href: "/submit", label: "Submit" }
 ] as const;
 
@@ -65,16 +65,21 @@ export function Navbar({ user, creditBalance, isAdmin }: NavbarProps) {
             <nav className="flex items-center gap-4">
               {BASE_LINKS.map((item) => {
                 const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const Icon = item.icon;
 
                 return (
                   <Link
                     className={cn(
                       "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-                      active && "text-foreground"
+                      item.accent &&
+                        "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
+                      active && !item.accent && "text-foreground",
+                      active && item.accent && "ring-2 ring-primary/25"
                     )}
                     href={item.href}
                     key={item.href}
                   >
+                    {Icon ? <Icon className="size-3.5" /> : null}
                     {item.label}
                   </Link>
                 );
@@ -102,7 +107,7 @@ export function Navbar({ user, creditBalance, isAdmin }: NavbarProps) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard">Dashboard</Link>
+                  <Link href="/dashboard">Search</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/submit">Submit</Link>

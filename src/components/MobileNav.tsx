@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { MenuIcon, RabbitIcon } from "lucide-react";
+import { MenuIcon, RabbitIcon, SearchIcon } from "lucide-react";
 
 import { SignInButton } from "@/components/AuthButtons";
 import { CreditBadge } from "@/components/CreditBadge";
@@ -31,7 +31,7 @@ type MobileNavProps = {
 };
 
 const BASE_LINKS = [
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard", label: "Search", icon: SearchIcon, accent: true },
   { href: "/submit", label: "Submit" }
 ] as const;
 
@@ -58,16 +58,21 @@ export function MobileNav({ user, creditBalance, isAdmin }: MobileNavProps) {
               <nav className="grid gap-1 p-4">
                 {BASE_LINKS.map((item) => {
                   const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  const Icon = item.icon;
 
                   return (
                     <SheetClose asChild key={item.href}>
                       <Link
                         className={cn(
                           "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
-                          active && "bg-muted text-foreground"
+                          item.accent &&
+                            "inline-flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
+                          active && !item.accent && "bg-muted text-foreground",
+                          active && item.accent && "ring-2 ring-primary/30"
                         )}
                         href={item.href}
                       >
+                        {Icon ? <Icon className="size-4" /> : null}
                         {item.label}
                       </Link>
                     </SheetClose>

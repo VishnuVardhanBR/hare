@@ -36,6 +36,16 @@ function readPositiveIntEnv(name: string, fallback: number): number {
   return parsed;
 }
 
+function readBooleanEnv(name: string, fallback: boolean): boolean {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+
+  const normalized = raw.trim().toLowerCase();
+  if (["1", "true", "yes", "y", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "n", "off"].includes(normalized)) return false;
+  return fallback;
+}
+
 const smtpNextAllowedByDomain = new Map<string, number>();
 const smtpQueueByDomain = new Map<string, Promise<void>>();
 const DNS_CACHE_TTL_MS = readPositiveIntEnv("EMAIL_DNS_CACHE_TTL_MS", 10 * 60 * 1000);
@@ -43,6 +53,7 @@ const DNS_NEGATIVE_CACHE_TTL_MS = readPositiveIntEnv("EMAIL_DNS_NEGATIVE_CACHE_T
 const SMTP_MIN_INTERVAL_MS = readPositiveIntEnv("SMTP_MIN_INTERVAL_MS", 5000);
 const SMTP_CONNECT_TIMEOUT_MS = readPositiveIntEnv("SMTP_CONNECT_TIMEOUT_MS", 4500);
 const SMTP_MAX_MX_HOSTS = readPositiveIntEnv("SMTP_MAX_MX_HOSTS", 3);
+const SMTP_CHECK_ENABLED = readBooleanEnv("SMTP_CHECK_ENABLED", process.env.VERCEL !== "1");
 
 type MailHostLookup =
   | {
@@ -399,6 +410,14 @@ export async function verifyRecruiterEmail({
     };
   }
 
+  if (!SMTP_CHECK_ENABLED) {
+    return {
+      status: "verified",
+      note: "Domain verified, mailbox unconfirmed.",
+      lastVerifiedAt: new Date()
+    };
+  }
+
   const smtpResult = await runWithDomainRateLimit(emailDomain, async () =>
     verifyMailboxAcrossHosts(mailHosts.hosts, normalizedEmail)
   );
@@ -426,7 +445,7 @@ export async function verifyRecruiterEmail({
     default:
       return {
         status: "verified",
-        note: "Domain verified, mailbox unconfirmed (SMTP unreachable from server).",
+        note: "Domain verified, mailbox unconfirmed.",
         lastVerifiedAt: new Date()
       };
   }
