@@ -25,6 +25,7 @@ type DashboardSearchExperienceProps = {
 };
 
 const MIN_QUERY = 2;
+const MAX_POPULAR_CHIPS = 3;
 
 export function DashboardSearchExperience({ popularCompanies }: DashboardSearchExperienceProps) {
   const router = useRouter();
@@ -70,6 +71,8 @@ export function DashboardSearchExperience({ popularCompanies }: DashboardSearchE
 
   const trimmedQuery = query.trim();
   const showResultsCard = trimmedQuery.length >= MIN_QUERY;
+  const visiblePopularCompanies = popularCompanies.slice(0, MAX_POPULAR_CHIPS);
+  const hiddenPopularCount = Math.max(popularCompanies.length - visiblePopularCompanies.length, 0);
 
   return (
     <div className="space-y-6">
@@ -105,7 +108,7 @@ export function DashboardSearchExperience({ popularCompanies }: DashboardSearchE
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Popular
               </span>
-              {popularCompanies.map((company) => (
+              {visiblePopularCompanies.map((company) => (
                 <button
                   className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm backdrop-blur transition hover:bg-white hover:text-slate-900"
                   key={company.id}
@@ -116,6 +119,9 @@ export function DashboardSearchExperience({ popularCompanies }: DashboardSearchE
                   <Badge variant="secondary">{company.contactCount}</Badge>
                 </button>
               ))}
+              {hiddenPopularCount > 0 ? (
+                <span className="px-1 text-sm font-medium text-slate-500">and {hiddenPopularCount} more</span>
+              ) : null}
             </div>
           ) : null}
         </div>
