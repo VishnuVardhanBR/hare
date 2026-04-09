@@ -72,6 +72,15 @@ The user emphasized "VERY SIMPLE AND TO THE POINT PLATFORM" multiple times. Keep
 - Component library: Tailwind CSS v4 + shadcn/ui (New York variant)
 - Layout: `max-w-4xl` content container, sticky top nav, no footer
 
+**Visual style: tasteful glassmorphism.** The landing logo marquee and dashboard search are the signature surfaces — keep them glassy. Signature patterns:
+- Frosted container: `rounded-[2.5rem] border border-white/60 bg-white/55 backdrop-blur-xl shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)]`
+- Nested pill: `rounded-full border border-white/70 bg-white/80 backdrop-blur shadow-inner`
+- Ambient glow: `pointer-events-none absolute -inset-6 rounded-[3rem] bg-gradient-to-r from-primary/15 via-sky-300/10 to-amber-200/10 blur-2xl`
+- Chip affordance: `rounded-full border border-white/70 bg-white/70 backdrop-blur`
+- Marquee edges fade via `mask-image: linear-gradient(...)`; track duplicates + `animate-marquee` keyframe in `globals.css`
+
+This coexists with "VERY SIMPLE AND TO THE POINT" — glassmorphism applies to the *surface treatment*, not the information density. Don't pile on extra chrome, animations, or decorative elements. If you add a new primary surface, match these exact class strings so the look stays coherent.
+
 **Critical implementation notes:**
 - The previous "UI-only changes" rule was specific to the redesign phase and is no longer global. API/lib updates are allowed when required by product changes.
 - Existing prop contracts between server and client components must be preserved.
