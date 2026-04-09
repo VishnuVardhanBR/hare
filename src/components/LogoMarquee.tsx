@@ -6,7 +6,7 @@ import { useState } from "react";
 type MarqueeCompany = {
   id: string;
   name: string;
-  domain: string | null;
+  logoUrl: string;
 };
 
 type LogoMarqueeProps = {
@@ -16,22 +16,18 @@ type LogoMarqueeProps = {
 function LogoItem({ company }: { company: MarqueeCompany }) {
   const [failed, setFailed] = useState(false);
 
-  if (!company.domain || failed) {
-    return (
-      <span className="shrink-0 whitespace-nowrap text-sm font-medium text-slate-400">
-        {company.name}
-      </span>
-    );
+  if (failed) {
+    return null;
   }
 
   return (
     <div className="relative flex h-10 w-28 shrink-0 items-center justify-center">
       <Image
-        alt=""
+        alt={company.name}
         className="max-h-10 w-auto object-contain opacity-60 grayscale transition hover:opacity-100 hover:grayscale-0"
         height={40}
         onError={() => setFailed(true)}
-        src={`https://logo.clearbit.com/${company.domain}`}
+        src={company.logoUrl}
         unoptimized
         width={112}
       />

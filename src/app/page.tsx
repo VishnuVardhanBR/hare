@@ -4,6 +4,7 @@ import { RabbitIcon } from "lucide-react";
 
 import { SignInButton } from "@/components/AuthButtons";
 import { LogoMarquee } from "@/components/LogoMarquee";
+import { getRenderableLogoCompanies } from "@/components/logoMarqueeUtils";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -15,13 +16,16 @@ export default async function LandingPage() {
   }
 
   const companies = await prisma.company.findMany({
-    select: { id: true, name: true, domain: true },
+    select: { id: true, name: true, logoUrl: true },
     where: {
-      recruiterEmails: { some: {} }
+      recruiterEmails: { some: {} },
+      logoUrl: { not: null }
     },
     orderBy: { recruiterEmails: { _count: "desc" } },
     take: 12
   });
+
+  const companiesWithLogo = getRenderableLogoCompanies(companies);
 
   return (
     <section className="space-y-12 py-4 text-center">
@@ -45,7 +49,7 @@ export default async function LandingPage() {
         </div>
       </div>
 
-      <LogoMarquee companies={companies} />
+      <LogoMarquee companies={companiesWithLogo} />
     </section>
   );
 }

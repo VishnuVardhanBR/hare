@@ -258,12 +258,12 @@ export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntr
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        className="h-8 cursor-pointer rounded-full px-2.5 text-slate-700 hover:bg-white/70"
-                        size="sm"
+                        className="h-7 cursor-pointer rounded-full px-2 text-xs text-slate-700 hover:bg-white/70"
+                        size="xs"
                         type="button"
                         variant="ghost"
                       >
-                        <FlagIcon className="size-4" />
+                        <FlagIcon className="size-3.5" />
                         Report
                       </Button>
                     </PopoverTrigger>
