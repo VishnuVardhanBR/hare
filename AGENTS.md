@@ -64,7 +64,7 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 
 The user emphasized "VERY SIMPLE AND TO THE POINT PLATFORM" multiple times. Keep the UI minimal. Don't over-design. The core loop is: search -> unlock -> submit -> repeat.
 
-**Frontend redesign in progress.** Read `DESIGN.md` for the complete design system specification including:
+**Frontend redesign complete.** Read `DESIGN.md` for the complete design system specification including:
 - Color palette (blue primary, slate neutrals, amber credits)
 - Typography (Inter font)
 - Component library (Tailwind CSS v4 + shadcn/ui New York variant)
@@ -78,4 +78,21 @@ The user emphasized "VERY SIMPLE AND TO THE POINT PLATFORM" multiple times. Keep
 - Auth pattern: `getServerSession(authOptions)` in server components, `signIn`/`signOut` from `next-auth/react` in client components. No `SessionProvider` wrapper.
 - Nav needs `creditBalance` and `isAdmin` — fetch in `layout.tsx`, pass as props.
 - Tailwind v4 uses CSS-based config (not `tailwind.config.js`). shadcn init handles this.
-- Run `npm run deploy:build` to verify Cloudflare Workers compatibility after changes.
+
+## Deployment
+
+**Platform:** Vercel (migrated from Cloudflare Workers — bundle size exceeded 3 MiB limit)
+**Production URL:** https://hare-indol.vercel.app
+**Custom domain:** Cloudflare DNS A record → 76.76.21.21
+
+**Database:** Supabase PostgreSQL (project: `iqnphwkwnzdsjhlofyjx`)
+**Auth:** NextAuth v4, Google OAuth, `.edu` emails only
+
+**Deploy:** Push to `main` → GitHub Actions → Vercel CLI → production.
+Required GitHub Secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
+
+**Key env vars (set in Vercel dashboard):**
+- `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- `DATABASE_URL`, `DIRECT_URL` (Supabase pooled + direct connection strings)
+- `ADMIN_EMAILS` (comma-separated admin emails, e.g. `vbheemreddy@umass.edu`)
