@@ -54,19 +54,13 @@ Logo rendering (optional):
 - `NEXT_PUBLIC_LOGO_DEV_TOKEN` (publishable token for landing-page company logos)
 
 Email verification tuning (optional):
-- `EMAIL_VERIFICATION_PROVIDER` (default `abstract`; supports `abstract` or `smtp`)
-- `ABSTRACT_API_KEY` (single key for `abstract` provider)
+- `ABSTRACT_API_KEY` (primary key for verification)
 - `ABSTRACT_API_KEYS` (optional comma-separated keys; verifier cycles keys on provider failure)
 - `ABSTRACT_API_KEY_SECONDARY` (optional secondary fallback key)
 - `ABSTRACT_API_BASE_URL` (optional; default `https://emailreputation.abstractapi.com/v1/`)
 - `ABSTRACT_TIMEOUT_MS` (default `5000`)
 - `ABSTRACT_MIN_INTERVAL_MS` (default `1000`; useful for free-plan per-second limits)
 - `ABSTRACT_MIN_QUALITY_SCORE` (default `0.7`)
-- `SMTP_MIN_INTERVAL_MS` (default `5000`)
-- `SMTP_CONNECT_TIMEOUT_MS` (default `4500`)
-- `SMTP_MAX_MX_HOSTS` (default `3`)
-- `EMAIL_DNS_CACHE_TTL_MS` (default `600000`)
-- `EMAIL_DNS_NEGATIVE_CACHE_TTL_MS` (default `120000`)
 
 ## Deploy: Vercel + Supabase
 
@@ -91,7 +85,6 @@ Required GitHub Secrets (repo Settings → Secrets and variables → Actions):
    - `npx vercel env add GOOGLE_CLIENT_SECRET production`
    - `npx vercel env add ADMIN_EMAILS production`
    - `npx vercel env add ENABLE_CREDIT_PURCHASES production`
-   - `npx vercel env add EMAIL_VERIFICATION_PROVIDER production`
    - `npx vercel env add ABSTRACT_API_KEY production`
    - `npx vercel env add ABSTRACT_API_KEYS production`
 2. Add domain to project:
@@ -118,7 +111,6 @@ Run:
 - `npm run seed:import -- /absolute/path/to/recruiters.csv`
 
 ## Notes
-- Default verification provider is Abstract with strict acceptance for credit-earning user submissions.
-- `EMAIL_VERIFICATION_PROVIDER=smtp` can be used as an operational fallback.
+- Verification is Abstract-only with strict acceptance for credit-earning user submissions.
 - Local Stripe webhook forwarding:
   - `stripe listen --forward-to localhost:3000/api/stripe/webhook`

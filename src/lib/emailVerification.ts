@@ -63,8 +63,7 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function parseVerificationProvider(): "abstract" | "smtp" {
-  const raw = (process.env.EMAIL_VERIFICATION_PROVIDER ?? "abstract").trim().toLowerCase();
-  return raw === "smtp" ? "smtp" : "abstract";
+  return "abstract";
 }
 
 function readAbstractApiKeys(): string[] {
