@@ -21,7 +21,7 @@ export function CompanySearch({ defaultQuery = "" }: CompanySearchProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div>
       <CompanySearchCombobox
         allowCustomValue={false}
         emptyMessage="No companies found."
@@ -31,7 +31,6 @@ export function CompanySearch({ defaultQuery = "" }: CompanySearchProps) {
         showContactCount
         value={query}
       />
-      <p className="text-xs text-muted-foreground">Search and select a company to open contacts.</p>
     </div>
   );
 }

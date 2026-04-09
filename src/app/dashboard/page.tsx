@@ -83,17 +83,7 @@ export default async function DashboardPage() {
             <PurchaseCredits />
           </CardContent>
         </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">How to earn credits</CardTitle>
-            <CardDescription>
-              Credit purchases are currently disabled. Submit a valid recruiter email to earn 5
-              credits.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
+      ) : null}
 
       <Card>
         <CardHeader>

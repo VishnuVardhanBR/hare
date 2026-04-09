@@ -233,7 +233,6 @@ export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntr
                     {entry.lastVerifiedAt
                       ? new Date(entry.lastVerifiedAt).toLocaleDateString()
                       : "Unknown"}
-                    {entry.submittedBy ? ` · Submitted by ${entry.submittedBy}` : ""}
                   </p>
                 ) : (
                   <Button
@@ -293,10 +292,6 @@ export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntr
                     </PopoverContent>
                   </Popover>
                 </div>
-
-                {entry.verificationNote ? (
-                  <p className="text-xs text-muted-foreground">Verification: {entry.verificationNote}</p>
-                ) : null}
               </CardContent>
             </Card>
           );
