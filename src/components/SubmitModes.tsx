@@ -15,7 +15,7 @@ export function SubmitModes() {
     <div className="space-y-4">
       <Tabs
         tabs={[
-          { title: "Single Submit", value: "single" },
+          { title: "Single Entry", value: "single" },
           { title: "CSV Upload", value: "csv" }
         ]}
         value={mode}

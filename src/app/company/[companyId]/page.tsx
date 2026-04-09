@@ -98,11 +98,11 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">No contacts yet</CardTitle>
-            <CardDescription>Be the first to submit and earn 5 credits.</CardDescription>
+            <CardDescription>Be the first to contribute and earn 5 credits.</CardDescription>
           </CardHeader>
           <CardContent>
             <Link className="text-sm font-medium text-primary hover:underline" href="/submit">
-              Submit a recruiter email
+              Add a recruiter email
             </Link>
           </CardContent>
         </Card>

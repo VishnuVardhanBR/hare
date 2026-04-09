@@ -2,6 +2,7 @@
 
 import { ReportReason } from "@prisma/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { CheckCircle2Icon, FlagIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -53,6 +54,7 @@ const REPORT_REASON_LABELS: Record<ReportReason, string> = {
 };
 
 export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntriesProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"all" | "locked" | "unlocked">("all");
   const [credits, setCredits] = useState(initialCredits);
   const [rowState, setRowState] = useState(entries);
@@ -122,6 +124,7 @@ export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntr
             : entry
         )
       );
+      router.refresh();
       toast.success("Contact unlocked.");
     } catch {
       setActionError("Unable to unlock this contact.");
@@ -165,9 +168,9 @@ export function CompanyEntries({ initialCredits, entries, isAdmin }: CompanyEntr
       {!isAdmin && credits < 1 && rowState.some((entry) => !entry.unlocked) ? (
         <Alert variant="destructive">
           <AlertDescription>
-            You are out of credits. Submit a valid recruiter email to earn 5 credits. {" "}
+            You are out of credits. Add a valid recruiter email to earn 5 credits.{" "}
             <Link className="font-medium underline underline-offset-4" href="/submit">
-              Submit now
+              Contribute now
             </Link>
             .
           </AlertDescription>

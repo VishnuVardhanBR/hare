@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2Icon, UploadIcon } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -19,6 +20,7 @@ type UploadResult = {
 };
 
 export function SubmitBulkUpload() {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +73,7 @@ export function SubmitBulkUpload() {
         invalidRows: payload.invalidRows ?? 0,
         errors: payload.errors ?? []
       });
+      router.refresh();
       setFile(null);
     } catch {
       setError("CSV upload failed.");

@@ -72,7 +72,7 @@ export function MobileNav({ user, creditBalance, isAdmin }: MobileNavProps) {
                     active={submitActive}
                     className="h-10 w-full justify-start px-3"
                   >
-                    <Link href="/submit">Submit</Link>
+                    <Link href="/submit">Contribute</Link>
                   </NavPrimaryPill>
                 </SheetClose>
 

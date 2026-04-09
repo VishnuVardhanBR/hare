@@ -8,7 +8,7 @@ export default async function SubmitPage() {
   return (
     <section className="space-y-5">
       <div className="space-y-1.5">
-        <h1 className="text-2xl font-semibold tracking-tight">Submit recruiter email</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Add recruiter contact</h1>
         <p className="text-sm text-muted-foreground">
           If verification passes, you earn 5 credits instantly.
         </p>

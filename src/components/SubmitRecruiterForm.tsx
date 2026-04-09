@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2Icon, TriangleAlertIcon } from "lucide-react";
 
 import {
@@ -25,6 +26,7 @@ const INITIAL_FORM = {
 };
 
 export function SubmitRecruiterForm() {
+  const router = useRouter();
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [selectedCompany, setSelectedCompany] = useState<CompanySearchResult | null>(null);
   const [domainWasEdited, setDomainWasEdited] = useState(false);
@@ -111,6 +113,7 @@ export function SubmitRecruiterForm() {
           ? `+${creditsEarned} credits awarded. ${verificationNote}`
           : `+${creditsEarned} credits awarded.`
       );
+      router.refresh();
       setSelectedCompany(null);
       setDomainWasEdited(false);
       setFormData(INITIAL_FORM);
@@ -213,7 +216,7 @@ export function SubmitRecruiterForm() {
         state={state === "submitting" ? "loading" : state === "success" ? "success" : "idle"}
         type="submit"
       >
-        {state === "submitting" ? "Submitting..." : "Submit and earn 5 credits"}
+        {state === "submitting" ? "Submitting..." : "Add contact and earn 5 credits"}
       </StatefulButton>
 
       {message ? (

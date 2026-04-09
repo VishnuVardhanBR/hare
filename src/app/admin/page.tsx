@@ -5,6 +5,7 @@ import { DeleteEmailButton, ResolveReportButton } from "@/components/AdminAction
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CopyTextButton } from "@/components/ui/copy-text-button";
 import {
   Table,
   TableBody,
@@ -85,6 +86,15 @@ function formatDateLabel(day: Date): string {
     day: "numeric",
     timeZone: "UTC"
   }).format(day);
+}
+
+function formatDateTime(value: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(value);
 }
 
 function getScalarParam(value: string | string[] | undefined): string | undefined {
@@ -383,7 +393,7 @@ export default async function AdminPage({
   rangeStart.setUTCHours(0, 0, 0, 0);
   rangeStart.setUTCDate(rangeStart.getUTCDate() - (rangeConfig.days - 1));
 
-  const [pendingReports, pendingReportsCount, reportsInWindow, newCompanies, topCompaniesRaw, uniqueCountsRaw, dailySeriesRaw] =
+  const [pendingReports, recentEmails, pendingReportsCount, reportsInWindow, newCompanies, topCompaniesRaw, uniqueCountsRaw, dailySeriesRaw] =
     await Promise.all([
       prisma.report.findMany({
         where: {
@@ -409,6 +419,20 @@ export default async function AdminPage({
           createdAt: "desc"
         },
         take: 50
+      }),
+      prisma.recruiterEmail.findMany({
+        include: {
+          company: {
+            select: { name: true }
+          },
+          submittedBy: {
+            select: { displayName: true }
+          }
+        },
+        orderBy: {
+          submittedAt: "desc"
+        },
+        take: 30
       }),
       prisma.report.count({
         where: {
@@ -660,12 +684,18 @@ export default async function AdminPage({
                   {pendingReports.map((report) => (
                     <TableRow key={report.id}>
                       <TableCell className="font-medium">{report.recruiterEmail.company.name}</TableCell>
-                      <TableCell>
-                        <div className="space-y-0.5">
-                          <p>{report.recruiterEmail.recruiterName}</p>
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <p>{report.recruiterEmail.recruiterName}</p>
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <p className="text-xs text-slate-500">{report.recruiterEmail.email}</p>
+                          <CopyTextButton
+                            className="h-6 px-2 text-[11px]"
+                            value={report.recruiterEmail.email}
+                          />
                         </div>
-                      </TableCell>
+                      </div>
+                    </TableCell>
                       <TableCell>
                         <Badge variant="secondary">{report.reason}</Badge>
                       </TableCell>
@@ -725,6 +755,62 @@ export default async function AdminPage({
           </CardContent>
         </Card>
       </div>
+
+      <Card className="rounded-3xl border border-white/60 bg-white/70 py-5 shadow-sm backdrop-blur">
+        <CardHeader className="px-5 sm:px-6">
+          <CardTitle className="text-lg">Recent uploads</CardTitle>
+          <p className="text-xs text-slate-600">Latest recruiter emails added to the platform.</p>
+        </CardHeader>
+        <CardContent className="px-4 sm:px-6">
+          {recentEmails.length === 0 ? (
+            <p className="text-sm text-slate-600">No recent uploads yet.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Uploaded</TableHead>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Recruiter</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Submitter</TableHead>
+                  <TableHead className="w-[120px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentEmails.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell className="whitespace-nowrap text-xs text-slate-500">
+                      {formatDateTime(entry.submittedAt)}
+                    </TableCell>
+                    <TableCell className="font-medium">{entry.company.name}</TableCell>
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <p>{entry.recruiterName}</p>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <p className="text-xs text-slate-500">{entry.email}</p>
+                          <CopyTextButton className="h-6 px-2 text-[11px]" value={entry.email} />
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className="capitalize"
+                        variant={entry.verificationStatus === "VERIFIED" ? "default" : "destructive"}
+                      >
+                        {entry.verificationStatus.toLowerCase()}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{entry.submittedBy.displayName}</TableCell>
+                    <TableCell>
+                      <DeleteEmailButton emailId={entry.id} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </section>
   );
 }

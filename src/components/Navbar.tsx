@@ -69,7 +69,7 @@ export function Navbar({ user, creditBalance, isAdmin }: NavbarProps) {
               </NavPrimaryPill>
 
               <NavPrimaryPill asChild active={submitActive}>
-                <Link href="/submit">Submit</Link>
+                <Link href="/submit">Contribute</Link>
               </NavPrimaryPill>
             </nav>
 
