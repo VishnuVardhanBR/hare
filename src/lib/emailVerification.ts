@@ -46,6 +46,56 @@ function readBooleanEnv(name: string, fallback: boolean): boolean {
   return fallback;
 }
 
+function readFloatEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+
+  const parsed = Number.parseFloat(raw);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function parseVerificationProvider(): "abstract" | "smtp" {
+  const raw = (process.env.EMAIL_VERIFICATION_PROVIDER ?? "abstract").trim().toLowerCase();
+  return raw === "smtp" ? "smtp" : "abstract";
+}
+
+function readAbstractApiKeys(): string[] {
+  const ordered: string[] = [];
+  const seen = new Set<string>();
+
+  const push = (value: string | undefined) => {
+    const normalized = (value ?? "").trim();
+    if (!normalized || seen.has(normalized)) {
+      return;
+    }
+    seen.add(normalized);
+    ordered.push(normalized);
+  };
+
+  push(process.env.ABSTRACT_API_KEY);
+
+  const fromList = (process.env.ABSTRACT_API_KEYS ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  for (const key of fromList) {
+    push(key);
+  }
+
+  push(process.env.ABSTRACT_API_KEY_SECONDARY);
+
+  return ordered;
+}
+
 const smtpNextAllowedByDomain = new Map<string, number>();
 const smtpQueueByDomain = new Map<string, Promise<void>>();
 const DNS_CACHE_TTL_MS = readPositiveIntEnv("EMAIL_DNS_CACHE_TTL_MS", 10 * 60 * 1000);
@@ -54,6 +104,18 @@ const SMTP_MIN_INTERVAL_MS = readPositiveIntEnv("SMTP_MIN_INTERVAL_MS", 5000);
 const SMTP_CONNECT_TIMEOUT_MS = readPositiveIntEnv("SMTP_CONNECT_TIMEOUT_MS", 4500);
 const SMTP_MAX_MX_HOSTS = readPositiveIntEnv("SMTP_MAX_MX_HOSTS", 3);
 const SMTP_CHECK_ENABLED = readBooleanEnv("SMTP_CHECK_ENABLED", process.env.VERCEL !== "1");
+const ABSTRACT_API_BASE_URL = "https://emailvalidation.abstractapi.com/v1/";
+const ABSTRACT_TIMEOUT_MS = readPositiveIntEnv("ABSTRACT_TIMEOUT_MS", 5000);
+const ABSTRACT_MIN_INTERVAL_MS = readPositiveIntEnv("ABSTRACT_MIN_INTERVAL_MS", 1000);
+const ABSTRACT_MIN_QUALITY_SCORE = clamp(
+  readFloatEnv("ABSTRACT_MIN_QUALITY_SCORE", 0.7),
+  0,
+  1
+);
+const ABSTRACT_API_KEYS = readAbstractApiKeys();
+const EMAIL_VERIFICATION_PROVIDER = parseVerificationProvider();
+let abstractNextAllowedAt = 0;
+let abstractQueue: Promise<void> = Promise.resolve();
 
 type MailHostLookup =
   | {
@@ -205,6 +267,31 @@ async function runWithDomainRateLimit<T>(domain: string, task: () => Promise<T>)
     if (smtpQueueByDomain.get(domain) === queueEntry) {
       smtpQueueByDomain.delete(domain);
     }
+  }
+}
+
+async function runWithAbstractRateLimit<T>(task: () => Promise<T>): Promise<T> {
+  const previous = abstractQueue;
+  let releaseLock: (() => void) | undefined;
+  const lock = new Promise<void>((resolve) => {
+    releaseLock = resolve;
+  });
+
+  abstractQueue = previous.catch(() => undefined).then(() => lock);
+
+  await previous.catch(() => undefined);
+
+  const now = Date.now();
+  if (abstractNextAllowedAt > now) {
+    await wait(abstractNextAllowedAt - now);
+  }
+
+  abstractNextAllowedAt = Date.now() + ABSTRACT_MIN_INTERVAL_MS;
+
+  try {
+    return await task();
+  } finally {
+    releaseLock?.();
   }
 }
 
@@ -360,6 +447,250 @@ async function verifyMailboxAcrossHosts(mailHosts: string[], email: string): Pro
   return "error";
 }
 
+type AbstractBooleanField =
+  | boolean
+  | {
+      value?: boolean | null;
+      text?: string;
+    }
+  | null
+  | undefined;
+
+type AbstractEmailValidationPayload = {
+  autocorrect?: string;
+  auto_correct?: string;
+  deliverability?: string;
+  quality_score?: number | string | null;
+  is_valid_format?: AbstractBooleanField;
+  is_free_email?: AbstractBooleanField;
+  is_disposable_email?: AbstractBooleanField;
+  is_role_email?: AbstractBooleanField;
+  is_catchall_email?: AbstractBooleanField;
+  is_mx_found?: AbstractBooleanField;
+};
+
+function verificationFailed(note: string): VerificationResult {
+  return {
+    status: "failed",
+    note,
+    lastVerifiedAt: null
+  };
+}
+
+function verificationSucceeded(note: string): VerificationResult {
+  return {
+    status: "verified",
+    note,
+    lastVerifiedAt: new Date()
+  };
+}
+
+function parseAbstractBoolean(value: AbstractBooleanField): boolean | null {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (value && typeof value === "object" && "value" in value) {
+    const nested = value.value;
+    if (typeof nested === "boolean") {
+      return nested;
+    }
+    if (nested === null) {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+function parseAbstractScore(value: number | string | null | undefined): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+async function verifyRecruiterEmailViaSmtp(
+  normalizedEmail: string,
+  emailDomain: string
+): Promise<VerificationResult> {
+  const mailHosts = await resolveMailHostsForDomain(emailDomain);
+  if (mailHosts.status === "none") {
+    return verificationFailed("Email domain has no MX records.");
+  }
+
+  if (!SMTP_CHECK_ENABLED) {
+    return verificationSucceeded("Domain verified, mailbox unconfirmed.");
+  }
+
+  const smtpResult = await runWithDomainRateLimit(emailDomain, async () =>
+    verifyMailboxAcrossHosts(mailHosts.hosts, normalizedEmail)
+  );
+
+  switch (smtpResult) {
+    case "confirmed":
+      return verificationSucceeded("Domain and mailbox verified.");
+    case "rejected":
+      return verificationFailed("Mailbox does not exist at this domain.");
+    case "unconfirmed":
+      return verificationSucceeded("Domain verified, mailbox unconfirmed.");
+    case "error":
+    default:
+      return verificationSucceeded("Domain verified, mailbox unconfirmed.");
+  }
+}
+
+function mapAbstractSuccess(payload: AbstractEmailValidationPayload): VerificationResult {
+  const deliverability = (payload.deliverability ?? "").trim().toUpperCase();
+  const validFormat = parseAbstractBoolean(payload.is_valid_format);
+  const isFreeEmail = parseAbstractBoolean(payload.is_free_email);
+  const isDisposableEmail = parseAbstractBoolean(payload.is_disposable_email);
+  const isRoleEmail = parseAbstractBoolean(payload.is_role_email);
+  const isCatchallEmail = parseAbstractBoolean(payload.is_catchall_email);
+  const isMxFound = parseAbstractBoolean(payload.is_mx_found);
+  const qualityScore = parseAbstractScore(payload.quality_score);
+  const autoCorrect = (payload.autocorrect ?? payload.auto_correct ?? "").trim();
+
+  if (validFormat !== true) {
+    return verificationFailed("Invalid email format.");
+  }
+
+  if (isDisposableEmail === true) {
+    return verificationFailed("Disposable email domains are not allowed.");
+  }
+
+  if (isFreeEmail === true) {
+    return verificationFailed("Free email providers are not allowed.");
+  }
+
+  if (isRoleEmail === true) {
+    return verificationFailed("Role-based inboxes are not allowed.");
+  }
+
+  if (isCatchallEmail === true) {
+    return verificationFailed("Catch-all inboxes are not accepted.");
+  }
+
+  if (isMxFound === false) {
+    return verificationFailed("Email domain has no MX records.");
+  }
+
+  if (deliverability !== "DELIVERABLE") {
+    if (deliverability === "UNDELIVERABLE" && autoCorrect) {
+      return verificationFailed(`Undeliverable email. Did you mean ${autoCorrect}?`);
+    }
+    if (deliverability === "UNKNOWN") {
+      return verificationFailed("Email deliverability could not be confirmed.");
+    }
+    return verificationFailed("Email is not deliverable.");
+  }
+
+  if (qualityScore === null || qualityScore < ABSTRACT_MIN_QUALITY_SCORE) {
+    return verificationFailed("Email quality score is below the acceptance threshold.");
+  }
+
+  return verificationSucceeded("Deliverability verified via Abstract.");
+}
+
+type AbstractRequestFailureReason =
+  | "unauthorized"
+  | "quota"
+  | "rate_limited"
+  | "service_unavailable"
+  | "request_failed"
+  | "invalid_response"
+  | "network_error";
+
+function mapAbstractFailureToMessage(reason: AbstractRequestFailureReason): string {
+  switch (reason) {
+    case "quota":
+      return "Email verification quota reached. Please try again later.";
+    case "rate_limited":
+      return "Email verification is rate-limited. Please retry shortly.";
+    case "invalid_response":
+      return "Email verification service returned an invalid response.";
+    case "network_error":
+    case "service_unavailable":
+    case "request_failed":
+    case "unauthorized":
+    default:
+      return "Email verification service is unavailable.";
+  }
+}
+
+function mapAbstractStatusToFailureReason(status: number): AbstractRequestFailureReason {
+  if (status === 401) return "unauthorized";
+  if (status === 422) return "quota";
+  if (status === 429) return "rate_limited";
+  if (status === 500 || status === 503) return "service_unavailable";
+  return "request_failed";
+}
+
+async function verifyRecruiterEmailViaAbstract(
+  normalizedEmail: string
+): Promise<VerificationResult> {
+  if (ABSTRACT_API_KEYS.length === 0) {
+    return verificationFailed("Email verification service is unavailable.");
+  }
+
+  let lastFailure: AbstractRequestFailureReason = "service_unavailable";
+
+  for (const apiKey of ABSTRACT_API_KEYS) {
+    const url = new URL(ABSTRACT_API_BASE_URL);
+    url.searchParams.set("api_key", apiKey);
+    url.searchParams.set("email", normalizedEmail);
+    url.searchParams.set("auto_correct", "false");
+
+    const controller = new AbortController();
+    const timeoutHandle = setTimeout(() => controller.abort(), ABSTRACT_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await runWithAbstractRateLimit(async () =>
+        fetch(url.toString(), {
+          method: "GET",
+          cache: "no-store",
+          signal: controller.signal
+        })
+      );
+    } catch {
+      clearTimeout(timeoutHandle);
+      lastFailure = "network_error";
+      continue;
+    } finally {
+      clearTimeout(timeoutHandle);
+    }
+
+    if (!response.ok) {
+      lastFailure = mapAbstractStatusToFailureReason(response.status);
+      continue;
+    }
+
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      lastFailure = "invalid_response";
+      continue;
+    }
+
+    if (!payload || typeof payload !== "object") {
+      lastFailure = "invalid_response";
+      continue;
+    }
+
+    return mapAbstractSuccess(payload as AbstractEmailValidationPayload);
+  }
+
+  return verificationFailed(mapAbstractFailureToMessage(lastFailure));
+}
+
 export async function verifyRecruiterEmail({
   email,
   companyDomain,
@@ -394,59 +725,12 @@ export async function verifyRecruiterEmail({
     );
 
   if (!domainMatchesCompany) {
-    return {
-      status: "failed",
-      note: "Email domain does not match the selected company.",
-      lastVerifiedAt: null
-    };
+    return verificationFailed("Email domain does not match the selected company.");
   }
 
-  const mailHosts = await resolveMailHostsForDomain(emailDomain);
-  if (mailHosts.status === "none") {
-    return {
-      status: "failed",
-      note: "Email domain has no MX records.",
-      lastVerifiedAt: null
-    };
+  if (EMAIL_VERIFICATION_PROVIDER === "smtp") {
+    return verifyRecruiterEmailViaSmtp(normalizedEmail, emailDomain);
   }
 
-  if (!SMTP_CHECK_ENABLED) {
-    return {
-      status: "verified",
-      note: "Domain verified, mailbox unconfirmed.",
-      lastVerifiedAt: new Date()
-    };
-  }
-
-  const smtpResult = await runWithDomainRateLimit(emailDomain, async () =>
-    verifyMailboxAcrossHosts(mailHosts.hosts, normalizedEmail)
-  );
-
-  switch (smtpResult) {
-    case "confirmed":
-      return {
-        status: "verified",
-        note: "Domain and mailbox verified.",
-        lastVerifiedAt: new Date()
-      };
-    case "rejected":
-      return {
-        status: "failed",
-        note: "Mailbox does not exist at this domain.",
-        lastVerifiedAt: null
-      };
-    case "unconfirmed":
-      return {
-        status: "verified",
-        note: "Domain verified, mailbox unconfirmed.",
-        lastVerifiedAt: new Date()
-      };
-    case "error":
-    default:
-      return {
-        status: "verified",
-        note: "Domain verified, mailbox unconfirmed.",
-        lastVerifiedAt: new Date()
-      };
-  }
+  return verifyRecruiterEmailViaAbstract(normalizedEmail);
 }

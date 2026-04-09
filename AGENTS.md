@@ -10,7 +10,7 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 
 **Per-email unlock, not per-company.** The user explicitly chose this for monetization. 1 credit = 1 recruiter email revealed. Don't change this to per-company.
 
-**MVP quality controls are intentionally minimal.** Automated verification on submit (format + domain + SMTP) plus a manual "Report" button that goes to an admin panel. No automated flag thresholds, no reputation scores, no credit penalties. The user said the full flagging system was "too complex for MVP." These are listed as post-MVP in the spec.
+**MVP quality controls are intentionally minimal.** Automated verification on submit (format + domain + provider check) plus a manual "Report" button that goes to an admin panel. No automated flag thresholds, no reputation scores, no credit penalties. The user said the full flagging system was "too complex for MVP." These are listed as post-MVP in the spec.
 
 **No passwords.** Google OAuth only, restricted to .edu email domains. First login auto-creates the account. Don't add a password-based auth flow.
 
@@ -30,9 +30,11 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 
 ## Technical Gotchas
 
-**SMTP verification has limits.** Google Workspace and other catch-all mail servers accept all addresses - you can't confirm the specific mailbox exists. For these, mark as "domain verified, mailbox unconfirmed" and move on. Don't block the submission.
+**Email verification provider:** Abstract Email Validation is the default verification provider for user credit-earning submissions. `EMAIL_VERIFICATION_PROVIDER=smtp` is available as an operational fallback.
 
-**Rate-limit SMTP checks.** If you hammer corporate mail servers with verification requests, the app's IP gets blacklisted. Implement rate limiting per domain.
+**SMTP verification has limits (fallback mode).** Google Workspace and other catch-all mail servers accept all addresses - you can't confirm the specific mailbox exists. For these, mark as "domain verified, mailbox unconfirmed" and move on.
+
+**Rate-limit SMTP checks (fallback mode).** If you hammer corporate mail servers with verification requests, the app's IP gets blacklisted. Implement rate limiting per domain.
 
 **Company name normalization matters.** "Apple", "Apple Inc", "Apple Inc." should all resolve to the same company. Build this into the company creation/search flow from the start.
 
@@ -45,7 +47,7 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 - Support/admin pages: Opt-out page, Admin bulk CSV upload page
 - Google OAuth with .edu restriction
 - Credit system (earn, spend, purchase)
-- Email verification pipeline (format + domain + SMTP)
+- Email verification pipeline (format + domain + provider validation)
 - Company search with autocomplete
 - Per-email unlock with blur/reveal
 - Report button (sends to admin panel)
@@ -57,7 +59,7 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 - Automated flag thresholds
 - Submitter reputation scores
 - Credit penalties for bad submissions
-- Periodic re-verification (monthly SMTP re-check)
+- Periodic re-verification
 - Automated credit refunds
 - Leaderboards, notifications, company pages with stats
 - Mobile app
