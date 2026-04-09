@@ -25,3 +25,9 @@ yarn-debug.log*
 yarn-error.log*
 coverage
 .vercel
+
+# tooling
+.wrangler
+.playwright-mcp
+.mcp.json
+.claude
