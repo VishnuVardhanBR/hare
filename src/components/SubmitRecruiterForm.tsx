@@ -27,6 +27,7 @@ const INITIAL_FORM = {
 export function SubmitRecruiterForm() {
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [selectedCompany, setSelectedCompany] = useState<CompanySearchResult | null>(null);
+  const [domainWasEdited, setDomainWasEdited] = useState(false);
   const [state, setState] = useState<SubmitState>("idle");
   const [message, setMessage] = useState<string | null>(null);
 
@@ -35,7 +36,7 @@ export function SubmitRecruiterForm() {
     setFormData((current) => ({
       ...current,
       companyName: company.name,
-      companyDomain: company.domain ?? current.companyDomain
+      companyDomain: current.companyDomain.trim() ? current.companyDomain : (company.domain ?? "")
     }));
   }
 
@@ -73,7 +74,7 @@ export function SubmitRecruiterForm() {
       formData.email.trim().length < 3
     ) {
       setState("error");
-      setMessage("Please complete all required fields.");
+      setMessage("Complete required fields: work email, recruiter name, and company name.");
       return;
     }
 
@@ -103,46 +104,46 @@ export function SubmitRecruiterForm() {
       }
 
       setState("success");
+      const creditsEarned = payload.creditsEarned ?? 5;
+      const verificationNote = payload.verification?.trim();
       setMessage(
-        `Email verified. +${payload.creditsEarned ?? 5} credits awarded. ${payload.verification ?? ""}`
+        verificationNote
+          ? `+${creditsEarned} credits awarded. ${verificationNote}`
+          : `+${creditsEarned} credits awarded.`
       );
       setSelectedCompany(null);
+      setDomainWasEdited(false);
       setFormData(INITIAL_FORM);
     } catch {
       setState("error");
-      setMessage("Submission failed.");
+      setMessage("Submission failed. Please try again.");
     }
   }
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
-      <div className="space-y-2">
-        <Label htmlFor="company-input">Company name *</Label>
-        <CompanySearchCombobox
-          id="company-input"
-          onSelect={handleCompanySelect}
-          onValueChange={handleCompanyValueChange}
-          placeholder="Type to search existing companies..."
-          required
-          value={formData.companyName}
-        />
-      </div>
-
+    <form className="space-y-4" onSubmit={handleSubmit}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="companyDomain">Company domain</Label>
+          <Label htmlFor="email">Work email *</Label>
           <Input
-            id="companyDomain"
-            placeholder="apple.com"
-            disabled={!!selectedCompany}
-            value={formData.companyDomain}
-            onChange={(event) =>
-              setFormData((current) => ({ ...current, companyDomain: event.target.value }))
-            }
+            id="email"
+            required
+            type="email"
+            value={formData.email}
+            onChange={(event) => {
+              const nextEmail = event.target.value;
+              setFormData((current) => {
+                const inferredDomain = sanitizeDomain(getDomainFromEmail(nextEmail.trim().toLowerCase()));
+                const shouldAutoFillDomain = !domainWasEdited || !current.companyDomain.trim();
+                return {
+                  ...current,
+                  email: nextEmail,
+                  companyDomain:
+                    shouldAutoFillDomain && inferredDomain ? inferredDomain : current.companyDomain
+                };
+              });
+            }}
           />
-          {selectedCompany ? (
-            <p className="text-xs text-muted-foreground">Using domain from selected company.</p>
-          ) : null}
         </div>
 
         <div className="space-y-2">
@@ -159,27 +160,14 @@ export function SubmitRecruiterForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email">Work email *</Label>
-        <Input
-          id="email"
+        <Label htmlFor="company-input">Company name *</Label>
+        <CompanySearchCombobox
+          id="company-input"
+          onSelect={handleCompanySelect}
+          onValueChange={handleCompanyValueChange}
+          placeholder="Type to search existing companies..."
           required
-          type="email"
-          value={formData.email}
-          onChange={(event) => {
-            const nextEmail = event.target.value;
-            setFormData((current) => {
-              if (selectedCompany || current.companyDomain.trim()) {
-                return { ...current, email: nextEmail };
-              }
-
-              const inferredDomain = sanitizeDomain(getDomainFromEmail(nextEmail.trim().toLowerCase()));
-              return {
-                ...current,
-                email: nextEmail,
-                companyDomain: inferredDomain || current.companyDomain
-              };
-            });
-          }}
+          value={formData.companyName}
         />
       </div>
 
@@ -207,7 +195,22 @@ export function SubmitRecruiterForm() {
         </div>
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="companyDomain">Company domain</Label>
+        <Input
+          id="companyDomain"
+          placeholder="apple.com"
+          value={formData.companyDomain}
+          onChange={(event) => {
+            setDomainWasEdited(true);
+            setFormData((current) => ({ ...current, companyDomain: event.target.value }));
+          }}
+        />
+        <p className="text-xs text-muted-foreground">Auto-filled from email, editable.</p>
+      </div>
+
       <StatefulButton
+        className="w-full border-primary bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto sm:min-w-56"
         state={state === "submitting" ? "loading" : state === "success" ? "success" : "idle"}
         type="submit"
       >
@@ -215,9 +218,9 @@ export function SubmitRecruiterForm() {
       </StatefulButton>
 
       {message ? (
-        <Alert variant={state === "error" ? "destructive" : "default"}>
+        <Alert className="py-3" variant={state === "error" ? "destructive" : "default"}>
           {state === "error" ? <TriangleAlertIcon className="size-4" /> : <CheckCircle2Icon className="size-4" />}
-          <AlertTitle>{state === "error" ? "Submission error" : "Submission successful"}</AlertTitle>
+          <AlertTitle>{state === "error" ? "Submission error" : "Submitted"}</AlertTitle>
           <AlertDescription>{message}</AlertDescription>
         </Alert>
       ) : null}
