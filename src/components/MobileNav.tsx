@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { signOut } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { MenuIcon, RabbitIcon, SearchIcon } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
-import { SignInButton } from "@/components/AuthButtons";
-import { CreditBadge } from "@/components/CreditBadge";
-import { Button } from "@/components/ui/button";
+import {
+  NavCreditPill,
+  NavGhostButton,
+  NavPrimaryPill,
+  NavTextLink
+} from "@/components/nav/NavPrimitives";
 import {
   Sheet,
   SheetClose,
@@ -19,7 +21,6 @@ import {
   SheetTitle,
   SheetTrigger
 } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
 
 type MobileNavProps = {
   user: {
@@ -31,21 +32,12 @@ type MobileNavProps = {
   isAdmin: boolean;
 };
 
-type NavLink = {
-  href: string;
-  label: string;
-  icon?: LucideIcon;
-  accent?: boolean;
-};
-
-const BASE_LINKS: NavLink[] = [
-  { href: "/dashboard", label: "Search", icon: SearchIcon, accent: true },
-  { href: "/submit", label: "Submit" }
-];
-
 export function MobileNav({ user, creditBalance, isAdmin }: MobileNavProps) {
   const pathname = usePathname();
   const hideLandingSignIn = !user && pathname === "/";
+  const searchActive = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+  const submitActive = pathname === "/submit" || pathname.startsWith("/submit/");
+  const adminActive = pathname === "/admin" || pathname.startsWith("/admin/");
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur md:hidden">
@@ -53,61 +45,58 @@ export function MobileNav({ user, creditBalance, isAdmin }: MobileNavProps) {
         {user ? (
           <Sheet>
             <SheetTrigger asChild>
-              <Button size="icon" variant="ghost">
+              <NavGhostButton className="size-9 justify-center px-0" type="button">
                 <MenuIcon className="size-5" />
                 <span className="sr-only">Open navigation menu</span>
-              </Button>
+              </NavGhostButton>
             </SheetTrigger>
             <SheetContent className="w-80 p-0" side="left" showCloseButton={false}>
               <SheetHeader className="border-b px-5 py-4 text-left">
                 <SheetTitle>{user.displayName}</SheetTitle>
                 <SheetDescription>{user.email ?? "Student account"}</SheetDescription>
               </SheetHeader>
-              <nav className="grid gap-1 p-4">
-                {BASE_LINKS.map((item) => {
-                  const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                  const Icon = item.icon;
 
-                  return (
-                    <SheetClose asChild key={item.href}>
-                      <Link
-                        className={cn(
-                          "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
-                          item.accent &&
-                            "inline-flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
-                          active && !item.accent && "bg-muted text-foreground",
-                          active && item.accent && "ring-2 ring-primary/30"
-                        )}
-                        href={item.href}
-                      >
-                        {Icon ? <Icon className="size-4" /> : null}
-                        {item.label}
-                      </Link>
-                    </SheetClose>
-                  );
-                })}
+              <nav className="grid gap-2 p-4">
+                <SheetClose asChild>
+                  <NavPrimaryPill asChild active={searchActive} className="h-10 w-full justify-start px-3">
+                    <Link href="/dashboard">
+                      <SearchIcon className="size-4" />
+                      Search
+                    </Link>
+                  </NavPrimaryPill>
+                </SheetClose>
+
+                <SheetClose asChild>
+                  <NavTextLink
+                    asChild
+                    active={submitActive}
+                    className="h-10 w-full justify-start rounded-xl border border-transparent px-3 hover:bg-white/70"
+                  >
+                    <Link href="/submit">Submit</Link>
+                  </NavTextLink>
+                </SheetClose>
+
                 {isAdmin ? (
                   <SheetClose asChild>
-                    <Link
-                      className={cn(
-                        "rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
-                        pathname === "/admin" && "bg-muted text-foreground"
-                      )}
-                      href="/admin"
+                    <NavTextLink
+                      asChild
+                      active={adminActive}
+                      className="h-10 w-full justify-start rounded-xl border border-transparent px-3 hover:bg-white/70"
                     >
-                      Admin
-                    </Link>
+                      <Link href="/admin">Admin</Link>
+                    </NavTextLink>
                   </SheetClose>
                 ) : null}
               </nav>
+
               <SheetFooter className="mt-auto border-t px-4 py-4">
-                <Button
-                  className="w-full"
+                <NavGhostButton
+                  className="h-10 w-full justify-center"
+                  type="button"
                   onClick={() => signOut({ callbackUrl: "/" })}
-                  variant="outline"
                 >
                   Sign Out
-                </Button>
+                </NavGhostButton>
               </SheetFooter>
             </SheetContent>
           </Sheet>
@@ -124,9 +113,15 @@ export function MobileNav({ user, creditBalance, isAdmin }: MobileNavProps) {
 
         <div className="justify-self-end">
           {user ? (
-            <CreditBadge className="text-xs" credits={creditBalance} unlimited={isAdmin} />
+            <NavCreditPill className="h-8 px-2.5 text-xs" credits={creditBalance} unlimited={isAdmin} />
           ) : hideLandingSignIn ? null : (
-            <SignInButton className="h-8 px-3 text-xs" />
+            <NavPrimaryPill
+              className="h-8 px-3 text-xs"
+              type="button"
+              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            >
+              Sign in
+            </NavPrimaryPill>
           )}
         </div>
       </div>

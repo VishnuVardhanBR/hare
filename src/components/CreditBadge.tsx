@@ -1,4 +1,4 @@
-import { CoinsIcon } from "lucide-react";
+import { CarrotIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,7 @@ export function CreditBadge({ credits, unlimited = false, className }: CreditBad
       )}
       variant="secondary"
     >
-      <CoinsIcon className="size-3.5" />
+      <CarrotIcon className="size-3.5" />
       {unlimited ? "Unlimited credits" : creditLabel(credits)}
     </Badge>
   );

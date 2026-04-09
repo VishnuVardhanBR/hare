@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { signOut } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { ChevronDownIcon, RabbitIcon, SearchIcon } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
-import { SignInButton } from "@/components/AuthButtons";
-import { CreditBadge } from "@/components/CreditBadge";
+import {
+  NavCreditPill,
+  NavGhostButton,
+  NavPrimaryPill,
+  NavTextLink
+} from "@/components/nav/NavPrimitives";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +20,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
 
 type NavbarProps = {
   user: {
@@ -29,18 +30,6 @@ type NavbarProps = {
   creditBalance: number;
   isAdmin: boolean;
 };
-
-type NavLink = {
-  href: string;
-  label: string;
-  icon?: LucideIcon;
-  accent?: boolean;
-};
-
-const BASE_LINKS: NavLink[] = [
-  { href: "/dashboard", label: "Search", icon: SearchIcon, accent: true },
-  { href: "/submit", label: "Submit" }
-];
 
 function getInitials(name: string) {
   const segments = name
@@ -59,6 +48,8 @@ function getInitials(name: string) {
 export function Navbar({ user, creditBalance, isAdmin }: NavbarProps) {
   const pathname = usePathname();
   const hideLandingSignIn = !user && pathname === "/";
+  const searchActive = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+  const submitActive = pathname === "/submit" || pathname.startsWith("/submit/");
 
   return (
     <header className="sticky top-0 z-50 hidden border-b bg-background/95 backdrop-blur md:block">
@@ -69,42 +60,31 @@ export function Navbar({ user, creditBalance, isAdmin }: NavbarProps) {
         </Link>
 
         {user ? (
-          <div className="flex items-center gap-5">
-            <nav className="flex items-center gap-4">
-              {BASE_LINKS.map((item) => {
-                const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                const Icon = item.icon;
+          <div className="flex items-center gap-4">
+            <nav className="flex items-center gap-3">
+              <NavPrimaryPill asChild active={searchActive}>
+                <Link href="/dashboard">
+                  <SearchIcon className="size-3.5" />
+                  Search
+                </Link>
+              </NavPrimaryPill>
 
-                return (
-                  <Link
-                    className={cn(
-                      "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-                      item.accent &&
-                        "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground",
-                      active && !item.accent && "text-foreground",
-                      active && item.accent && "ring-2 ring-primary/25"
-                    )}
-                    href={item.href}
-                    key={item.href}
-                  >
-                    {Icon ? <Icon className="size-3.5" /> : null}
-                    {item.label}
-                  </Link>
-                );
-              })}
+              <NavTextLink asChild active={submitActive}>
+                <Link href="/submit">Submit</Link>
+              </NavTextLink>
             </nav>
 
-            <CreditBadge credits={creditBalance} unlimited={isAdmin} />
+            <NavCreditPill credits={creditBalance} unlimited={isAdmin} />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="h-9 gap-2 px-2" variant="ghost">
+                <NavGhostButton className="px-2" type="button">
                   <Avatar className="size-7">
                     <AvatarImage alt={user.displayName} src={user.image ?? undefined} />
                     <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
                   </Avatar>
                   <ChevronDownIcon className="size-4 text-muted-foreground" />
-                </Button>
+                </NavGhostButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
@@ -138,7 +118,13 @@ export function Navbar({ user, creditBalance, isAdmin }: NavbarProps) {
             </DropdownMenu>
           </div>
         ) : hideLandingSignIn ? null : (
-          <SignInButton className="h-9 px-4" />
+          <NavPrimaryPill
+            className="h-9 px-4"
+            type="button"
+            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+          >
+            Sign in with Google (.edu)
+          </NavPrimaryPill>
         )}
       </div>
     </header>
