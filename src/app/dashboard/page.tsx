@@ -1,7 +1,17 @@
 import Link from "next/link";
 
 import { CompanySearch } from "@/components/CompanySearch";
+import { CreditBadge } from "@/components/CreditBadge";
 import { PurchaseCredits } from "@/components/PurchaseCredits";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
 import { isCreditPurchasesEnabled } from "@/lib/featureFlags";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
@@ -38,56 +48,81 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <section className="stack-lg">
-      <div className="panel row-space">
-        <div>
-          <p className="muted">Logged in as {user?.displayName ?? "student"}</p>
-          <h1 style={{ margin: "0.2rem 0 0" }}>Credits: {user?.creditBalance ?? 0}</h1>
-        </div>
-        <Link className="primary-btn" href="/submit">
-          Submit an email (+5)
-        </Link>
-      </div>
+    <section className="space-y-8">
+      <Card>
+        <CardContent className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Welcome, {user?.displayName ?? "student"}</p>
+            <CreditBadge credits={user?.creditBalance ?? 0} />
+          </div>
 
-      <div className="panel stack-md">
-        <h2 style={{ margin: 0 }}>Search recruiter contacts</h2>
-        <CompanySearch />
-      </div>
+          <Button asChild>
+            <Link href="/submit">Submit email (+5)</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Search recruiter contacts</CardTitle>
+          <CardDescription>Search by company and open contact lists instantly.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CompanySearch />
+        </CardContent>
+      </Card>
 
       {creditPurchasesEnabled ? (
-        <div className="panel stack-md">
-          <h2 style={{ margin: 0 }}>Buy credits</h2>
-          <p className="muted">For students who have no contacts to share yet.</p>
-          <PurchaseCredits />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Buy credits</CardTitle>
+            <CardDescription>For students who do not have contacts to share yet.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PurchaseCredits />
+          </CardContent>
+        </Card>
       ) : (
-        <div className="panel stack-md">
-          <h2 style={{ margin: 0 }}>How to earn credits</h2>
-          <p className="muted">
-            Credit purchases are currently disabled. Submit a valid recruiter email to earn 5
-            credits.
-          </p>
-          <Link className="primary-btn" href="/submit">
-            Submit a valid email (+5)
-          </Link>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">How to earn credits</CardTitle>
+            <CardDescription>
+              Credit purchases are currently disabled. Submit a valid recruiter email to earn 5
+              credits.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href="/submit">Submit a valid email (+5)</Link>
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="panel stack-md">
-        <h2 style={{ margin: 0 }}>Popular companies</h2>
-        <div className="list">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Popular companies</CardTitle>
+          <CardDescription>Companies with the most available recruiter contacts.</CardDescription>
+        </CardHeader>
+        <CardContent>
           {topCompanies.length === 0 ? (
-            <p className="muted">No recruiter contacts yet.</p>
+            <p className="text-sm text-muted-foreground">No recruiter contacts yet.</p>
           ) : (
-            topCompanies.map((company) => (
-              <Link className="list-item" href={`/company/${company.id}`} key={company.id}>
-                <p className="row-title">{company.name}</p>
-                <p className="muted">{company._count.recruiterEmails} contacts</p>
-              </Link>
-            ))
+            <div className="flex flex-wrap gap-3">
+              {topCompanies.map((company) => (
+                <Link
+                  className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition hover:bg-muted"
+                  href={`/company/${company.id}`}
+                  key={company.id}
+                >
+                  <span>{company.name}</span>
+                  <Badge variant="secondary">{company._count.recruiterEmails}</Badge>
+                </Link>
+              ))}
+            </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </section>
   );
 }

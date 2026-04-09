@@ -2,6 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Loader2Icon } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
 
 export function ResolveReportButton({
   reportId,
@@ -31,26 +44,25 @@ export function ResolveReportButton({
   }
 
   return (
-    <button
-      className={action === "resolve" ? "primary-btn" : "ghost-btn"}
+    <Button
       disabled={loading}
       onClick={handleClick}
+      size="sm"
       type="button"
+      variant={action === "resolve" ? "default" : "outline"}
     >
-      {loading ? "..." : action === "resolve" ? "Resolve" : "Dismiss"}
-    </button>
+      {loading ? <Loader2Icon className="size-4 animate-spin" /> : null}
+      {action === "resolve" ? "Resolve" : "Dismiss"}
+    </Button>
   );
 }
 
 export function DeleteEmailButton({ emailId }: { emailId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  async function handleClick() {
-    if (!confirm("Delete this recruiter email and all associated reports/unlocks?")) {
-      return;
-    }
-
+  async function handleDelete() {
     setLoading(true);
     try {
       const response = await fetch("/api/admin/delete-email", {
@@ -60,6 +72,7 @@ export function DeleteEmailButton({ emailId }: { emailId: string }) {
       });
 
       if (response.ok) {
+        setOpen(false);
         router.refresh();
       }
     } finally {
@@ -68,8 +81,37 @@ export function DeleteEmailButton({ emailId }: { emailId: string }) {
   }
 
   return (
-    <button className="ghost-btn" disabled={loading} onClick={handleClick} type="button">
-      {loading ? "..." : "Delete email"}
-    </button>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" type="button" variant="destructive">
+          Delete
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Delete recruiter email?</DialogTitle>
+          <DialogDescription>
+            This will permanently remove the recruiter email and all associated reports and unlock
+            records.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button disabled={loading} type="button" variant="outline">
+              Cancel
+            </Button>
+          </DialogClose>
+          <Button
+            disabled={loading}
+            onClick={handleDelete}
+            type="button"
+            variant="destructive"
+          >
+            {loading ? <Loader2Icon className="size-4 animate-spin" /> : null}
+            Delete email
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

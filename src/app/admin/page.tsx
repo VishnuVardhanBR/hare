@@ -1,17 +1,44 @@
 import { ReportStatus } from "@prisma/client";
 
 import { DeleteEmailButton, ResolveReportButton } from "@/components/AdminActions";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
 import { prisma } from "@/lib/prisma";
 import { isAdminEmail, requireSession } from "@/lib/session";
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <Card>
+      <CardContent className="space-y-1 pt-6">
+        <p className="text-2xl font-bold">{value}</p>
+        <p className="text-sm text-muted-foreground">{label}</p>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default async function AdminPage() {
   const session = await requireSession();
 
   if (!isAdminEmail(session.user.email)) {
     return (
-      <section className="panel stack-md">
-        <h1 style={{ margin: 0 }}>Admin only</h1>
-        <p className="muted">Your account is not listed in ADMIN_EMAILS.</p>
+      <section>
+        <Card>
+          <CardHeader>
+            <CardTitle>Admin only</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">Your account is not listed in ADMIN_EMAILS.</p>
+          </CardContent>
+        </Card>
       </section>
     );
   }
@@ -24,8 +51,10 @@ export default async function AdminPage() {
       include: {
         recruiterEmail: {
           select: {
+            id: true,
             email: true,
             recruiterName: true,
+            verificationStatus: true,
             company: {
               select: { name: true }
             }
@@ -70,87 +99,112 @@ export default async function AdminPage() {
   ]);
 
   return (
-    <section className="stack-lg">
-      <div className="panel stack-sm">
-        <h1 style={{ margin: 0 }}>Admin panel</h1>
-        <p className="muted">Manual moderation for reports and submissions.</p>
+    <section className="space-y-8">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold tracking-tight">Admin panel</h1>
+        <p className="text-sm text-muted-foreground">
+          Manual moderation for reports and recruiter email submissions.
+        </p>
       </div>
 
-      <div className="panel stack-sm">
-        <h2 style={{ margin: 0 }}>Platform stats</h2>
-        <div className="stat-grid">
-          <div>
-            <p className="stat-value">{stats.users}</p>
-            <p className="muted">Users</p>
-          </div>
-          <div>
-            <p className="stat-value">{stats.companies}</p>
-            <p className="muted">Companies</p>
-          </div>
-          <div>
-            <p className="stat-value">{stats.emails}</p>
-            <p className="muted">Recruiter emails</p>
-          </div>
-          <div>
-            <p className="stat-value">{stats.unlocks}</p>
-            <p className="muted">Total unlocks</p>
-          </div>
-          <div>
-            <p className="stat-value">{stats.pendingReports}</p>
-            <p className="muted">Pending reports</p>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <StatCard label="Users" value={stats.users} />
+        <StatCard label="Companies" value={stats.companies} />
+        <StatCard label="Recruiter emails" value={stats.emails} />
+        <StatCard label="Total unlocks" value={stats.unlocks} />
+        <StatCard label="Pending reports" value={stats.pendingReports} />
       </div>
 
-      <div className="panel stack-md">
-        <h2 style={{ margin: 0 }}>Pending reports ({reports.length})</h2>
-        {reports.length === 0 ? (
-          <p className="muted">No pending reports.</p>
-        ) : (
-          <div className="list">
-            {reports.map((report) => (
-              <article className="list-item" key={report.id}>
-                <div>
-                  <p className="row-title">
-                    {report.recruiterEmail.company.name} | {report.recruiterEmail.recruiterName}
-                  </p>
-                  <p className="muted">{report.recruiterEmail.email}</p>
-                  <p className="muted">
-                    Reason: {report.reason} | Reporter: {report.reporter.displayName}
-                  </p>
-                  <div className="row-wrap" style={{ marginTop: "0.5rem" }}>
-                    <ResolveReportButton action="resolve" reportId={report.id} />
-                    <ResolveReportButton action="dismiss" reportId={report.id} />
-                    <DeleteEmailButton emailId={report.emailId} />
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Pending reports ({reports.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {reports.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No pending reports.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Recruiter</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Reporter</TableHead>
+                  <TableHead className="w-[240px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reports.map((report) => (
+                  <TableRow key={report.id}>
+                    <TableCell className="font-medium">{report.recruiterEmail.company.name}</TableCell>
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <p>{report.recruiterEmail.recruiterName}</p>
+                        <p className="text-xs text-muted-foreground">{report.recruiterEmail.email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{report.reason}</Badge>
+                    </TableCell>
+                    <TableCell>{report.reporter.displayName}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        <ResolveReportButton action="resolve" reportId={report.id} />
+                        <ResolveReportButton action="dismiss" reportId={report.id} />
+                        <DeleteEmailButton emailId={report.emailId} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
-      <div className="panel stack-md">
-        <h2 style={{ margin: 0 }}>Recent submissions</h2>
-        <div className="list">
-          {recentEmails.map((entry) => (
-            <article className="list-item" key={entry.id}>
-              <div>
-                <p className="row-title">
-                  {entry.company.name} | {entry.recruiterName}
-                </p>
-                <p className="muted">{entry.email}</p>
-                <p className="muted">
-                  Status: {entry.verificationStatus} | Submitter: {entry.submittedBy.displayName}
-                </p>
-                <div style={{ marginTop: "0.5rem" }}>
-                  <DeleteEmailButton emailId={entry.id} />
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Recent submissions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Company</TableHead>
+                <TableHead>Recruiter</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Submitter</TableHead>
+                <TableHead className="w-[140px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentEmails.map((entry) => (
+                <TableRow key={entry.id}>
+                  <TableCell className="font-medium">{entry.company.name}</TableCell>
+                  <TableCell>
+                    <div className="space-y-0.5">
+                      <p>{entry.recruiterName}</p>
+                      <p className="text-xs text-muted-foreground">{entry.email}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      className="capitalize"
+                      variant={entry.verificationStatus === "VERIFIED" ? "default" : "destructive"}
+                    >
+                      {entry.verificationStatus.toLowerCase()}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{entry.submittedBy.displayName}</TableCell>
+                  <TableCell>
+                    <DeleteEmailButton emailId={entry.id} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </section>
   );
 }

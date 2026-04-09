@@ -3,6 +3,23 @@
 import { ReportReason } from "@prisma/client";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { CheckCircle2Icon, FlagIcon } from "lucide-react";
+import { toast } from "sonner";
+
+import { CreditBadge } from "@/components/CreditBadge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 type RecruiterEntry = {
   id: string;
@@ -28,11 +45,19 @@ const REPORT_REASONS: ReportReason[] = [
   ReportReason.OTHER
 ];
 
+const REPORT_REASON_LABELS: Record<ReportReason, string> = {
+  BOUNCED: "Bounced",
+  WRONG_PERSON: "Wrong person",
+  NOT_RECRUITER: "Not a recruiter",
+  OTHER: "Other"
+};
+
 export function CompanyEntries({ initialCredits, entries }: CompanyEntriesProps) {
   const [credits, setCredits] = useState(initialCredits);
   const [rowState, setRowState] = useState(entries);
   const [actionError, setActionError] = useState<string | null>(null);
   const [activeUnlockId, setActiveUnlockId] = useState<string | null>(null);
+  const [activeReportId, setActiveReportId] = useState<string | null>(null);
   const [reportReasons, setReportReasons] = useState<Record<string, ReportReason>>(() =>
     Object.fromEntries(entries.map((entry) => [entry.id, ReportReason.OTHER]))
   );
@@ -71,7 +96,7 @@ export function CompanyEntries({ initialCredits, entries }: CompanyEntriesProps)
         return;
       }
 
-      setCredits(payload.creditBalance ?? credits);
+      setCredits((current) => payload.creditBalance ?? current);
       setRowState((current) =>
         current.map((entry) =>
           entry.id === emailId
@@ -87,6 +112,7 @@ export function CompanyEntries({ initialCredits, entries }: CompanyEntriesProps)
             : entry
         )
       );
+      toast.success("Contact unlocked.");
     } catch {
       setActionError("Unable to unlock this contact.");
     } finally {
@@ -96,98 +122,172 @@ export function CompanyEntries({ initialCredits, entries }: CompanyEntriesProps)
 
   async function reportEntry(emailId: string) {
     setActionError(null);
+    setActiveReportId(emailId);
 
-    const response = await fetch("/api/report", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        emailId,
-        reason: reportReasons[emailId] ?? ReportReason.OTHER
-      })
-    });
+    try {
+      const response = await fetch("/api/report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          emailId,
+          reason: reportReasons[emailId] ?? ReportReason.OTHER
+        })
+      });
 
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-      setActionError(payload?.error ?? "Unable to submit report.");
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        setActionError(payload?.error ?? "Unable to submit report.");
+        return;
+      }
+
+      toast.success("Report submitted for review.");
+    } catch {
+      setActionError("Unable to submit report.");
+    } finally {
+      setActiveReportId(null);
     }
   }
 
   return (
-    <div className="stack-lg">
-      <div className="panel row-space">
-        <p>
-          Credits: <strong>{credits}</strong>
-        </p>
-        <p className="muted">
-          Unlocked: {visibleCount}/{rowState.length}
-        </p>
-      </div>
+    <div className="space-y-5">
+      <Card>
+        <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <CreditBadge credits={credits} />
+          <Badge variant="secondary">
+            Unlocked {visibleCount}/{rowState.length}
+          </Badge>
+        </CardContent>
+      </Card>
 
-      {credits < 1 ? (
-        <div className="panel stack-sm">
-          <p className="muted">
-            You are out of credits. Submit a valid recruiter email to earn 5 credits.
-          </p>
-          <Link className="primary-btn" href="/submit">
-            Submit a valid email (+5)
-          </Link>
-        </div>
+      {credits < 1 && rowState.some((entry) => !entry.unlocked) ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            You are out of credits. Submit a valid recruiter email to earn 5 credits. {" "}
+            <Link className="font-medium underline underline-offset-4" href="/submit">
+              Submit now
+            </Link>
+            .
+          </AlertDescription>
+        </Alert>
       ) : null}
 
-      {actionError ? <p className="error-text">{actionError}</p> : null}
+      {actionError ? (
+        <Alert variant="destructive">
+          <AlertDescription>{actionError}</AlertDescription>
+        </Alert>
+      ) : null}
 
-      <div className="stack-md">
+      <div className="space-y-4">
         {rowState.map((entry) => {
           const title = entry.title || "Recruiter";
           const department = entry.department || "Unknown team";
 
           return (
-            <article className="panel stack-sm" key={entry.id}>
-              <p className="row-title">{entry.recruiterName}</p>
-              <p>{title} | {department}</p>
-              <p>{entry.email}</p>
+            <Card key={entry.id}>
+              <CardContent className="space-y-4 pt-6">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1.5">
+                    <p
+                      className={cn(
+                        "text-base font-semibold",
+                        !entry.unlocked && "select-none blur-[2px]"
+                      )}
+                    >
+                      {entry.recruiterName}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {title} | {department}
+                    </p>
+                    <p
+                      className={cn(
+                        "font-mono text-sm",
+                        !entry.unlocked && "select-none blur-[2px]"
+                      )}
+                    >
+                      {entry.email}
+                    </p>
+                  </div>
 
-              {entry.unlocked ? (
-                <p className="muted">
-                  Last verified: {entry.lastVerifiedAt ? new Date(entry.lastVerifiedAt).toLocaleDateString() : "Unknown"}{entry.submittedBy ? ` | Submitted by: ${entry.submittedBy}` : ""}
-                </p>
-              ) : (
-                <button
-                  className="primary-btn"
-                  disabled={credits < 1 || activeUnlockId !== null}
-                  onClick={() => unlockEntry(entry.id)}
-                  type="button"
-                >
-                  {activeUnlockId === entry.id ? "Unlocking..." : "Unlock for 1 credit"}
-                </button>
-              )}
+                  {entry.unlocked ? (
+                    <Badge className="border-green-200 bg-green-50 text-green-700" variant="secondary">
+                      <CheckCircle2Icon className="size-3.5" />
+                      Unlocked
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Locked</Badge>
+                  )}
+                </div>
 
-              <div className="row-wrap">
-                <select
-                  className="select-input"
-                  value={reportReasons[entry.id] ?? ReportReason.OTHER}
-                  onChange={(event) =>
-                    setReportReasons((current) => ({
-                      ...current,
-                      [entry.id]: event.target.value as ReportReason
-                    }))
-                  }
-                >
-                  {REPORT_REASONS.map((reason) => (
-                    <option key={reason} value={reason}>
-                      {reason}
-                    </option>
-                  ))}
-                </select>
-                <button className="ghost-btn" onClick={() => reportEntry(entry.id)} type="button">
-                  Report
-                </button>
-              </div>
+                {entry.unlocked ? (
+                  <p className="text-xs text-muted-foreground">
+                    Last verified:{" "}
+                    {entry.lastVerifiedAt
+                      ? new Date(entry.lastVerifiedAt).toLocaleDateString()
+                      : "Unknown"}
+                    {entry.submittedBy ? ` · Submitted by ${entry.submittedBy}` : ""}
+                  </p>
+                ) : (
+                  <Button
+                    disabled={credits < 1 || activeUnlockId !== null}
+                    onClick={() => unlockEntry(entry.id)}
+                    type="button"
+                  >
+                    {activeUnlockId === entry.id ? "Unlocking..." : "Unlock for 1 credit"}
+                  </Button>
+                )}
 
-              {entry.verificationNote ? <p className="muted">Verification: {entry.verificationNote}</p> : null}
-            </article>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button size="sm" type="button" variant="ghost">
+                        <FlagIcon className="size-4" />
+                        Report
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-72 space-y-3">
+                      <p className="text-sm font-medium">Report this contact</p>
+                      <Select
+                        value={reportReasons[entry.id] ?? ReportReason.OTHER}
+                        onValueChange={(value) =>
+                          setReportReasons((current) => ({
+                            ...current,
+                            [entry.id]: value as ReportReason
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a reason" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {REPORT_REASONS.map((reason) => (
+                            <SelectItem key={reason} value={reason}>
+                              {REPORT_REASON_LABELS[reason]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Button
+                        className="w-full"
+                        disabled={activeReportId !== null}
+                        onClick={() => reportEntry(entry.id)}
+                        size="sm"
+                        type="button"
+                        variant="outline"
+                      >
+                        {activeReportId === entry.id ? "Submitting..." : "Submit report"}
+                      </Button>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {entry.verificationNote ? (
+                  <p className="text-xs text-muted-foreground">Verification: {entry.verificationNote}</p>
+                ) : null}
+              </CardContent>
+            </Card>
           );
         })}
       </div>

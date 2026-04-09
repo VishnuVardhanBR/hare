@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+
 type Tier = "10" | "25" | "50";
 
-const TIER_LABELS: Record<Tier, string> = {
-  "10": "10 credits",
-  "25": "25 credits",
-  "50": "50 credits"
+const TIER_DETAILS: Record<Tier, { credits: string; price: string }> = {
+  "10": { credits: "10 credits", price: "$3" },
+  "25": { credits: "25 credits", price: "$5" },
+  "50": { credits: "50 credits", price: "$8" }
 };
 
 export function PurchaseCredits() {
@@ -43,21 +47,33 @@ export function PurchaseCredits() {
   }
 
   return (
-    <div className="stack-md">
-      <div className="row-wrap">
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {(["10", "25", "50"] as const).map((tier) => (
-          <button
-            className="secondary-btn"
-            key={tier}
-            onClick={() => startCheckout(tier)}
-            disabled={activeTier !== null}
-            type="button"
-          >
-            {activeTier === tier ? "Opening..." : TIER_LABELS[tier]}
-          </button>
+          <Card className="border-slate-200" key={tier}>
+            <CardContent className="space-y-2 pt-6 text-center">
+              <p className="text-2xl font-bold">{TIER_DETAILS[tier].credits}</p>
+              <p className="text-sm text-muted-foreground">{TIER_DETAILS[tier].price}</p>
+            </CardContent>
+            <CardFooter>
+              <Button
+                className="w-full"
+                disabled={activeTier !== null}
+                onClick={() => startCheckout(tier)}
+                type="button"
+              >
+                {activeTier === tier ? "Opening..." : "Buy"}
+              </Button>
+            </CardFooter>
+          </Card>
         ))}
       </div>
-      {error ? <p className="error-text">{error}</p> : null}
+
+      {error ? (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
     </div>
   );
 }

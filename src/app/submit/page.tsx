@@ -1,21 +1,24 @@
 import { SubmitRecruiterForm } from "@/components/SubmitRecruiterForm";
+import { Card, CardContent } from "@/components/ui/card";
 import { requireSession } from "@/lib/session";
 
 export default async function SubmitPage() {
   await requireSession();
 
   return (
-    <section className="stack-lg">
-      <div className="panel stack-sm">
-        <h1 style={{ margin: 0 }}>Submit recruiter email</h1>
-        <p className="muted">
+    <section className="space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold tracking-tight">Submit recruiter email</h1>
+        <p className="text-sm text-muted-foreground">
           If verification passes, you earn 5 credits instantly.
         </p>
       </div>
 
-      <div className="panel">
-        <SubmitRecruiterForm />
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <SubmitRecruiterForm />
+        </CardContent>
+      </Card>
     </section>
   );
 }

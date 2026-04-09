@@ -1,6 +1,15 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeftIcon } from "lucide-react";
 
 import { CompanyEntries } from "@/components/CompanyEntries";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
 import { maskEmail, maskName } from "@/lib/masking";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
@@ -70,24 +79,35 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
   });
 
   return (
-    <section className="stack-lg">
-      <div className="panel stack-sm">
-        <h1 style={{ margin: 0 }}>{company.name}</h1>
-        <p className="muted">{company.recruiterEmails.length} recruiter contacts</p>
+    <section className="space-y-6">
+      <Link
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        href="/dashboard"
+      >
+        <ArrowLeftIcon className="size-4" />
+        Back to dashboard
+      </Link>
+
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight">{company.name}</h1>
+        <p className="text-sm text-muted-foreground">{company.recruiterEmails.length} recruiter contacts</p>
       </div>
 
       {entries.length === 0 ? (
-        <div className="panel stack-md">
-          <p className="muted">No contacts yet for this company.</p>
-          <p className="muted">Be the first to submit and earn 5 credits.</p>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">No contacts yet</CardTitle>
+            <CardDescription>Be the first to submit and earn 5 credits.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link className="text-sm font-medium text-primary hover:underline" href="/submit">
+              Submit a recruiter email
+            </Link>
+          </CardContent>
+        </Card>
       ) : (
         <CompanyEntries initialCredits={user?.creditBalance ?? 0} entries={entries} />
       )}
-
-      <p className="muted">
-        Locked rows intentionally show role and department, while identity details stay masked until unlock.
-      </p>
     </section>
   );
 }

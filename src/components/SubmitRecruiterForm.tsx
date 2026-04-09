@@ -1,14 +1,18 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
+import { CheckCircle2Icon, Loader2Icon, TriangleAlertIcon } from "lucide-react";
+
+import {
+  CompanySearchCombobox,
+  type CompanySearchResult
+} from "@/components/CompanySearchCombobox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type SubmitState = "idle" | "submitting" | "success" | "error";
-
-type CompanySuggestion = {
-  id: string;
-  name: string;
-  domain?: string;
-};
 
 const INITIAL_FORM = {
   companyName: "",
@@ -23,55 +27,29 @@ export function SubmitRecruiterForm() {
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [state, setState] = useState<SubmitState>("idle");
   const [message, setMessage] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<CompanySuggestion[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
 
-  useEffect(() => {
-    if (formData.companyName.trim().length < 2) {
-      setSuggestions([]);
-      return;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(async () => {
-      try {
-        const response = await fetch(
-          `/api/search?q=${encodeURIComponent(formData.companyName)}`,
-          { signal: controller.signal }
-        );
-
-        if (!response.ok) {
-          setSuggestions([]);
-          return;
-        }
-
-        const payload = (await response.json()) as {
-          companies: Array<{ id: string; name: string; domain?: string }>;
-        };
-        setSuggestions(payload.companies ?? []);
-      } catch {
-        // ignore abort errors
-      }
-    }, 250);
-
-    return () => {
-      controller.abort();
-      clearTimeout(timeoutId);
-    };
-  }, [formData.companyName]);
-
-  function selectCompany(company: CompanySuggestion) {
+  function handleCompanySelect(company: CompanySearchResult) {
     setFormData((current) => ({
       ...current,
       companyName: company.name,
       companyDomain: company.domain ?? current.companyDomain
     }));
-    setShowSuggestions(false);
-    setSuggestions([]);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (
+      formData.companyName.trim().length < 2 ||
+      formData.companyDomain.trim().length < 3 ||
+      formData.recruiterName.trim().length < 2 ||
+      formData.email.trim().length < 3
+    ) {
+      setState("error");
+      setMessage("Please complete all required fields.");
+      return;
+    }
+
     setState("submitting");
     setMessage(null);
 
@@ -109,78 +87,53 @@ export function SubmitRecruiterForm() {
   }
 
   return (
-    <form className="stack-md" onSubmit={handleSubmit}>
-      <div className="field-grid" style={{ position: "relative" }}>
-        <label className="field-label" htmlFor="companyName">
-          Company
-        </label>
-        <input
-          autoComplete="off"
-          className="text-input"
-          id="companyName"
+    <form className="space-y-5" onSubmit={handleSubmit}>
+      <div className="space-y-2">
+        <Label htmlFor="company-combobox">Company</Label>
+        <CompanySearchCombobox
+          id="company-combobox"
+          onSelect={handleCompanySelect}
+          onValueChange={(value) =>
+            setFormData((current) => ({
+              ...current,
+              companyName: value
+            }))
+          }
           placeholder="Type to search existing companies..."
-          required
           value={formData.companyName}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-          onChange={(event) => {
-            setFormData((current) => ({ ...current, companyName: event.target.value }));
-            setShowSuggestions(true);
-          }}
-          onFocus={() => setShowSuggestions(true)}
-        />
-        {showSuggestions && suggestions.length > 0 && (
-          <div className="autocomplete-dropdown">
-            {suggestions.map((company) => (
-              <button
-                className="autocomplete-item"
-                key={company.id}
-                onClick={() => selectCompany(company)}
-                type="button"
-              >
-                {company.name}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="field-grid">
-        <label className="field-label" htmlFor="companyDomain">
-          Company domain
-        </label>
-        <input
-          className="text-input"
-          id="companyDomain"
-          placeholder="apple.com"
-          required
-          value={formData.companyDomain}
-          onChange={(event) =>
-            setFormData((current) => ({ ...current, companyDomain: event.target.value }))
-          }
         />
       </div>
 
-      <div className="field-grid">
-        <label className="field-label" htmlFor="recruiterName">
-          Recruiter name
-        </label>
-        <input
-          className="text-input"
-          id="recruiterName"
-          required
-          value={formData.recruiterName}
-          onChange={(event) =>
-            setFormData((current) => ({ ...current, recruiterName: event.target.value }))
-          }
-        />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="companyDomain">Company domain</Label>
+          <Input
+            id="companyDomain"
+            placeholder="apple.com"
+            required
+            value={formData.companyDomain}
+            onChange={(event) =>
+              setFormData((current) => ({ ...current, companyDomain: event.target.value }))
+            }
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="recruiterName">Recruiter name</Label>
+          <Input
+            id="recruiterName"
+            required
+            value={formData.recruiterName}
+            onChange={(event) =>
+              setFormData((current) => ({ ...current, recruiterName: event.target.value }))
+            }
+          />
+        </div>
       </div>
 
-      <div className="field-grid">
-        <label className="field-label" htmlFor="email">
-          Work email
-        </label>
-        <input
-          className="text-input"
+      <div className="space-y-2">
+        <Label htmlFor="email">Work email</Label>
+        <Input
           id="email"
           required
           type="email"
@@ -191,40 +144,47 @@ export function SubmitRecruiterForm() {
         />
       </div>
 
-      <div className="field-grid">
-        <label className="field-label" htmlFor="title">
-          Title
-        </label>
-        <input
-          className="text-input"
-          id="title"
-          value={formData.title}
-          onChange={(event) =>
-            setFormData((current) => ({ ...current, title: event.target.value }))
-          }
-        />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="title">Title</Label>
+          <Input
+            id="title"
+            value={formData.title}
+            onChange={(event) =>
+              setFormData((current) => ({ ...current, title: event.target.value }))
+            }
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="department">Department</Label>
+          <Input
+            id="department"
+            value={formData.department}
+            onChange={(event) =>
+              setFormData((current) => ({ ...current, department: event.target.value }))
+            }
+          />
+        </div>
       </div>
 
-      <div className="field-grid">
-        <label className="field-label" htmlFor="department">
-          Department
-        </label>
-        <input
-          className="text-input"
-          id="department"
-          value={formData.department}
-          onChange={(event) =>
-            setFormData((current) => ({ ...current, department: event.target.value }))
-          }
-        />
-      </div>
-
-      <button className="primary-btn" disabled={state === "submitting"} type="submit">
-        {state === "submitting" ? "Submitting..." : "Submit and earn 5 credits"}
-      </button>
+      <Button disabled={state === "submitting"} type="submit">
+        {state === "submitting" ? (
+          <>
+            <Loader2Icon className="size-4 animate-spin" />
+            Submitting...
+          </>
+        ) : (
+          "Submit and earn 5 credits"
+        )}
+      </Button>
 
       {message ? (
-        <p className={state === "error" ? "error-text" : "success-text"}>{message}</p>
+        <Alert variant={state === "error" ? "destructive" : "default"}>
+          {state === "error" ? <TriangleAlertIcon className="size-4" /> : <CheckCircle2Icon className="size-4" />}
+          <AlertTitle>{state === "error" ? "Submission error" : "Submission successful"}</AlertTitle>
+          <AlertDescription>{message}</AlertDescription>
+        </Alert>
       ) : null}
     </form>
   );
