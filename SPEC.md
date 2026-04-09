@@ -189,8 +189,8 @@ Runs on submission, 3 stages:
 ## Search
 
 - Full-text search on company name + aliases
-- Autocomplete dropdown as user types
-- Results show: company name, number of contacts, company logo (if available)
+- Plain search input — results appear inline below as user types (no dropdown trigger)
+- Results show: company name, number of contacts
 - Click company → company page with individual recruiter entries
 
 ### Company Page Display (before unlock)
@@ -220,16 +220,3 @@ Last verified: Mar 2026  |  Submitted by: @student_4a8f
 - Recommended safety valve: include a simple opt-out page where recruiters can request removal of their email (low effort, high protection)
 - Terms of service should state: emails are user-submitted, platform doesn't guarantee accuracy, users agree not to spam
 
----
-
-## Verification Plan
-
-### How to test end-to-end:
-1. **Auth flow:** Sign in with a .edu Google account, verify account creation + 1 credit
-2. **Submit flow:** Submit a test recruiter email, verify all 3 verification stages run, verify +5 credits
-3. **Search flow:** Search for the company, verify it appears with contact count
-4. **Unlock flow:** Click unlock on a blurred entry, verify -1 credit, verify full details revealed
-5. **Duplicate flow:** Submit the same email again, verify rejection
-6. **0 credit state:** Spend all credits, verify unlock buttons are disabled, CTAs appear
-7. **Report flow:** Click report on an entry, verify it appears in admin panel
-8. **Payment flow:** Purchase credits via Stripe test mode, verify credit balance updates
