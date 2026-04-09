@@ -16,11 +16,11 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 
 **Blurred display strategy.** On company pages, show title and department in clear text but blur/mask the recruiter name and email. This lets students decide WHICH contact to unlock based on role relevance. e.g., "S***** Tech Recruiter | New Grad Team" is enough to decide.
 
-**Credit economics are final.** +1 on signup, +5 per verified submission, -1 per unlock. Don't adjust these without asking.
+**Credit economics are final for regular users.** +1 on signup, +5 per verified submission, -1 per unlock. Admin accounts are the exception: admin unlocks do not deduct credits (enforced server-side in `/api/unlock`). Don't change this without asking.
 
 ## Things NOT in the Spec That Matter
 
-**Cold start:** The maintainers will manually seed 50-100 recruiter emails before launch. Consider building an admin bulk-import tool or seed script for this.
+**Cold start:** Admin bulk import is implemented. Use `/admin/bulk-upload` (API: `/api/admin/bulk-upload`) or `npm run seed:import` for scripted imports.
 
 **Legal stance:** The user accepts the legal risk of sharing personal recruiter work emails. Still recommended to build a simple recruiter opt-out page (a basic form where a recruiter can request their email be removed). Low effort, good protection.
 
@@ -41,7 +41,8 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 ## Scope Boundaries
 
 **Build these (MVP):**
-- 5 pages: Landing, Dashboard, Company Page, Submit Form, Admin Panel
+- Core pages: Landing, Dashboard, Company Page, Submit Form, Admin Panel
+- Support/admin pages: Opt-out page, Admin bulk CSV upload page
 - Google OAuth with .edu restriction
 - Credit system (earn, spend, purchase)
 - Email verification pipeline (format + domain + SMTP)
@@ -50,6 +51,7 @@ A credit-based recruiter email sharing platform for CS/tech students. Students s
 - Report button (sends to admin panel)
 - Stripe integration for buying credits
 - Admin panel for reviewing reports and managing emails
+- Admin bulk CSV upload for recruiter contacts
 
 **Don't build these (post-MVP):**
 - Automated flag thresholds
@@ -73,11 +75,17 @@ The user emphasized "VERY SIMPLE AND TO THE POINT PLATFORM" multiple times. Keep
 - Interaction patterns (buttons, forms, search, unlock flow)
 
 **Critical implementation notes:**
-- Do NOT modify `src/app/api/`, `src/lib/`, or `prisma/`. Only UI files change.
+- The previous "UI-only changes" rule was specific to the redesign phase and is no longer global. API/lib updates are allowed when required by product changes.
 - Existing prop contracts between server and client components must be preserved.
 - Auth pattern: `getServerSession(authOptions)` in server components, `signIn`/`signOut` from `next-auth/react` in client components. No `SessionProvider` wrapper.
 - Nav needs `creditBalance` and `isAdmin` — fetch in `layout.tsx`, pass as props.
 - Tailwind v4 uses CSS-based config (not `tailwind.config.js`). shadcn init handles this.
+
+**Admin/Bulk upload details:**
+- Admin access is controlled by `ADMIN_EMAILS` (comma-separated).
+- Bulk upload CSV required headers: `company,domain,email,recruiter_name,title,department`
+- Required fields per row: `company`, `domain`, `email`, `recruiter_name`
+- Duplicate handling: exact email match is skipped.
 
 ## Deployment
 
@@ -95,4 +103,6 @@ Required GitHub Secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
 - `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 - `DATABASE_URL`, `DIRECT_URL` (Supabase pooled + direct connection strings)
-- `ADMIN_EMAILS` (comma-separated admin emails, e.g. `vbheemreddy@umass.edu`)
+- `ADMIN_EMAILS` (comma-separated admin emails, e.g. `vbheemreddy@umass.edu,jerinthomas@umass.edu`)
+- `ENABLE_CREDIT_PURCHASES`
+- Stripe vars when purchases are enabled: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_10`, `STRIPE_PRICE_25`, `STRIPE_PRICE_50`
