@@ -815,9 +815,10 @@ export async function verifyRecruiterEmail({
       domainLikelyMatchesCompany(emailDomain, knownDomain)
     );
 
-  if (!domainMatchesCompany) {
-    return verificationFailed("Email domain does not match the selected company.");
-  }
+  // Domain-match check disabled — recruiters often use different domains (e.g. gotinder.com vs Tinder)
+  // if (!domainMatchesCompany) {
+  //   return verificationFailed("Email domain does not match the selected company.");
+  // }
 
   if (EMAIL_VERIFICATION_PROVIDER === "smtp") {
     return verifyRecruiterEmailViaSmtp(normalizedEmail, emailDomain);
