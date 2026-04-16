@@ -83,7 +83,7 @@ function formatDateLabel(day: Date): string {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
-    timeZone: "UTC"
+    timeZone: "America/New_York"
   }).format(day);
 }
 
@@ -92,7 +92,8 @@ function formatDateTime(value: Date): string {
     month: "short",
     day: "numeric",
     hour: "numeric",
-    minute: "2-digit"
+    minute: "2-digit",
+    timeZone: "America/New_York"
   }).format(value);
 }
 
@@ -392,7 +393,7 @@ export default async function AdminPage({
   rangeStart.setUTCHours(0, 0, 0, 0);
   rangeStart.setUTCDate(rangeStart.getUTCDate() - (rangeConfig.days - 1));
 
-  const [pendingReports, recentEmails, pendingReportsCount, reportsInWindow, newCompanies, topCompaniesRaw, uniqueCountsRaw, dailySeriesRaw] =
+  const [pendingReports, recentEmails, pendingReportsCount, reportsInWindow, newCompanies, topCompaniesRaw, uniqueCountsRaw, dailySeriesRaw, users] =
     await Promise.all([
       prisma.report.findMany({
         where: {
@@ -528,7 +529,18 @@ export default async function AdminPage({
           GROUP BY 1
         ) AS credits ON credits.day = days.day
         ORDER BY days.day ASC
-      `
+      `,
+      prisma.user.findMany({
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+          creditBalance: true,
+          status: true,
+          createdAt: true
+        },
+        orderBy: { createdAt: "desc" }
+      })
     ]);
 
   const topCompanies: TopCompanyRow[] = topCompaniesRaw.map((row) => ({
@@ -799,6 +811,46 @@ export default async function AdminPage({
               </TableBody>
             </Table>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-3xl border border-white/60 bg-white/70 py-5 shadow-sm backdrop-blur">
+        <CardHeader className="px-5 sm:px-6">
+          <CardTitle className="text-lg">All users ({formatInteger(users.length)})</CardTitle>
+          <p className="text-xs text-slate-600">All registered accounts, newest first.</p>
+        </CardHeader>
+        <CardContent className="px-4 sm:px-6">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Joined</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Display name</TableHead>
+                <TableHead className="text-right">Credits</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="whitespace-nowrap text-xs text-slate-500">
+                    {formatDateTime(user.createdAt)}
+                  </TableCell>
+                  <TableCell className="text-sm">{user.email}</TableCell>
+                  <TableCell className="text-sm text-slate-600">{user.displayName}</TableCell>
+                  <TableCell className="text-right font-medium">{formatInteger(user.creditBalance)}</TableCell>
+                  <TableCell>
+                    <Badge
+                      className="capitalize"
+                      variant={user.status === "ACTIVE" ? "default" : "destructive"}
+                    >
+                      {user.status.toLowerCase()}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </section>
