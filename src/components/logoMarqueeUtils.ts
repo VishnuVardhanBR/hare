@@ -51,12 +51,24 @@ export function buildLogoDevUrl(
   return `${LOGO_DEV_BASE_URL}/${cleanDomain}?${params.toString()}`;
 }
 
+export function resolveCompanyLogoUrl(
+  company: { domain?: string | null; logoUrl?: string | null },
+  token: string | null | undefined
+): string | null {
+  const storedLogoUrl = company.logoUrl?.trim();
+  if (storedLogoUrl) {
+    return storedLogoUrl;
+  }
+
+  return buildLogoDevUrl(company.domain ?? "", token);
+}
+
 export function getRenderableLogoCompanies(
   companies: LogoCompanyInput[],
   token: string | null | undefined
 ): RenderableLogoCompany[] {
   return companies.flatMap((company) => {
-    const logoUrl = buildLogoDevUrl(company.domain ?? "", token);
+    const logoUrl = resolveCompanyLogoUrl(company, token);
     if (!logoUrl) {
       return [];
     }
