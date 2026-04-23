@@ -4,8 +4,16 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SearchIcon } from "lucide-react";
 
+import { CompanyLogoBadge } from "@/components/CompanyLogoBadge";
+import { resolveCompanyLogoUrl } from "@/components/logoMarqueeUtils";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AMBIENT_GLOW_CLASS,
+  GLASS_CHIP_CLASS,
+  NESTED_GLASS_PILL_CLASS,
+  PRIMARY_GLASS_SURFACE_CLASS
+} from "@/lib/uiClasses";
 
 type PopularCompany = {
   id: string;
@@ -17,17 +25,22 @@ type CompanyResult = {
   id: string;
   name: string;
   domain: string | null;
+  logoUrl?: string | null;
   contactCount: number;
 };
 
 type DashboardSearchExperienceProps = {
+  allCompanies: CompanyResult[];
   popularCompanies: PopularCompany[];
 };
 
 const MIN_QUERY = 2;
 const MAX_POPULAR_CHIPS = 3;
 
-export function DashboardSearchExperience({ popularCompanies }: DashboardSearchExperienceProps) {
+export function DashboardSearchExperience({
+  allCompanies,
+  popularCompanies
+}: DashboardSearchExperienceProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CompanyResult[]>([]);
@@ -42,8 +55,8 @@ export function DashboardSearchExperience({ popularCompanies }: DashboardSearchE
     }
 
     const controller = new AbortController();
+    setLoading(true);
     const timeoutId = setTimeout(async () => {
-      setLoading(true);
       try {
         const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`, {
           signal: controller.signal
@@ -70,19 +83,21 @@ export function DashboardSearchExperience({ popularCompanies }: DashboardSearchE
   }, [query]);
 
   const trimmedQuery = query.trim();
-  const showResultsCard = trimmedQuery.length >= MIN_QUERY;
+  const showSearchResults = trimmedQuery.length >= MIN_QUERY;
   const visiblePopularCompanies = popularCompanies.slice(0, MAX_POPULAR_CHIPS);
   const hasHiddenPopularCompanies = popularCompanies.length > visiblePopularCompanies.length;
+  const visibleCompanies = showSearchResults ? results : allCompanies;
+  const companySectionLabel = showSearchResults ? "Search results" : "All companies";
+  const companySectionDescription = showSearchResults
+    ? `Browse matches for "${trimmedQuery}".`
+    : "Browse every company in Hare.";
 
   return (
     <div className="space-y-6">
       <div className="relative">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -inset-6 rounded-[3rem] bg-gradient-to-r from-primary/15 via-sky-300/10 to-amber-200/10 blur-2xl"
-        />
+        <div aria-hidden className={AMBIENT_GLOW_CLASS} />
 
-        <div className="relative rounded-[2.5rem] border border-white/60 bg-white/55 p-6 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)] backdrop-blur-xl sm:p-8">
+        <div className={`relative p-6 sm:p-8 ${PRIMARY_GLASS_SURFACE_CLASS}`}>
           <label
             className="mb-3 block text-xs font-semibold uppercase tracking-wider text-slate-500"
             htmlFor="dashboard-search"
@@ -90,7 +105,7 @@ export function DashboardSearchExperience({ popularCompanies }: DashboardSearchE
             Search for companies
           </label>
 
-          <div className="flex items-center gap-3 rounded-full border border-white/70 bg-white/80 px-5 py-3 shadow-inner backdrop-blur">
+          <div className={`flex items-center gap-3 px-5 py-3 ${NESTED_GLASS_PILL_CLASS}`}>
             <SearchIcon aria-hidden className="size-5 shrink-0 text-slate-400" />
             <input
               autoComplete="off"
@@ -110,7 +125,7 @@ export function DashboardSearchExperience({ popularCompanies }: DashboardSearchE
               </span>
               {visiblePopularCompanies.map((company) => (
                 <button
-                  className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm backdrop-blur transition hover:bg-white hover:text-slate-900"
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-white hover:text-slate-900 ${GLASS_CHIP_CLASS}`}
                   key={company.id}
                   type="button"
                   onClick={() => router.push(`/company/${company.id}`)}
@@ -127,8 +142,20 @@ export function DashboardSearchExperience({ popularCompanies }: DashboardSearchE
         </div>
       </div>
 
-      {showResultsCard ? (
-        <div className="rounded-3xl border border-white/60 bg-white/70 p-2 shadow-xl backdrop-blur-xl">
+      {allCompanies.length > 0 || showSearchResults ? (
+        <div className={`p-2 ${PRIMARY_GLASS_SURFACE_CLASS}`}>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 pb-3 pt-2">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                {companySectionLabel}
+              </p>
+              <p className="text-sm text-slate-500">{companySectionDescription}</p>
+            </div>
+            <Badge className="h-6 px-2.5" variant="secondary">
+              {visibleCompanies.length}
+            </Badge>
+          </div>
+
           {loading ? (
             <div className="space-y-2 p-3">
               <Skeleton className="h-12 w-full rounded-xl" />
@@ -137,32 +164,46 @@ export function DashboardSearchExperience({ popularCompanies }: DashboardSearchE
             </div>
           ) : null}
 
-          {!loading && results.length === 0 ? (
+          {!loading && visibleCompanies.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-muted-foreground">
               No companies found for &quot;{trimmedQuery}&quot;.
             </p>
           ) : null}
 
-          {!loading && results.length > 0 ? (
-            <ul className="divide-y divide-slate-200/60">
-              {results.map((company) => (
-                <li key={company.id}>
-                  <button
-                    className="flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left transition hover:bg-white/80"
-                    type="button"
-                    onClick={() => router.push(`/company/${company.id}`)}
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-900">{company.name}</p>
-                      {company.domain ? (
-                        <p className="truncate text-xs text-slate-500">{company.domain}</p>
-                      ) : null}
-                    </div>
-                    <Badge variant="secondary">{company.contactCount}</Badge>
-                  </button>
-                </li>
-              ))}
-            </ul>
+          {!loading && visibleCompanies.length > 0 ? (
+            <div className="max-h-[38rem] overflow-y-auto px-1 pb-1">
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {visibleCompanies.map((company) => (
+                  <li key={company.id}>
+                    <button
+                      className="flex h-full w-full items-center justify-between gap-3 rounded-[1.5rem] border border-white/70 bg-white/70 px-4 py-3 text-left shadow-sm backdrop-blur transition hover:bg-white/85"
+                      type="button"
+                      onClick={() => router.push(`/company/${company.id}`)}
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <CompanyLogoBadge
+                          logoUrl={resolveCompanyLogoUrl(
+                            company,
+                            process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN
+                          )}
+                          name={company.name}
+                          size="sm"
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-slate-900">
+                            {company.name}
+                          </p>
+                          {company.domain ? (
+                            <p className="truncate text-xs text-slate-500">{company.domain}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                      <Badge variant="secondary">{company.contactCount}</Badge>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
         </div>
       ) : null}
